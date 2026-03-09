@@ -3,6 +3,7 @@ extends CanvasLayer
 const ColorFx = preload("res://scripts/color_fx.gd")
 const TitleArtScript = preload("res://scripts/title_art.gd")
 const PortraitViewScript = preload("res://scripts/portrait_view.gd")
+const DefaultUIFont = preload("res://fonts/NotoSansCJKsc-Regular.otf")
 
 var playfield_rect := Rect2(24.0, 24.0, 560.0, 912.0)
 var window_size := Vector2i(960, 960)
@@ -11,6 +12,10 @@ var overlay: ColorRect
 var overlay_header: Label
 var overlay_body: Label
 var overlay_footer: Label
+var reward_container: Control
+var reward_cards: Array = []
+var reward_anim_timer := 0.0
+var reward_anim_duration := 0.0
 var flash_rect: ColorRect
 var flash_timer := 0.0
 var flash_duration := 0.0
@@ -23,9 +28,12 @@ var power_value: Label
 var graze_value: Label
 var stage_value: Label
 var state_value: Label
-var difficulty_value: Label
+var menu_board_header: Label
+var menu_board_body: Label
 var boss_label: Label
 var boss_bar: ProgressBar
+var boss_multi_container: Control
+var boss_multi_rows: Array = []
 var banner_title: Label
 var banner_subtitle: Label
 var banner_timer := 0.0
@@ -36,6 +44,11 @@ var title_logo: Label
 var title_subtitle: Label
 var title_best: Label
 var title_hint: Label
+var title_ship_label: Label
+var title_ship_description: Label
+var title_mode_label: Label
+var title_mode_description: Label
+var title_controls: Label
 var difficulty_labels: Array = []
 var title_anim_time := 0.0
 var dialogue_container: Control
@@ -73,10 +86,11 @@ func _process(delta: float) -> void:
 		title_logo.position.y = 112.0 + sin(title_anim_time * 1.2) * 7.0
 		title_logo.modulate = Color(0.92, 0.98, 1.0, 0.92 + sin(title_anim_time * 2.4) * 0.08)
 		title_subtitle.modulate = Color(0.68, 0.9, 1.0, 0.82 + sin(title_anim_time * 1.6) * 0.12)
+		title_ship_label.modulate = Color(1.0, 0.9, 0.66, 0.9 + sin(title_anim_time * 3.2) * 0.08)
 	for index in range(difficulty_labels.size()):
 		var row: Label = difficulty_labels[index]
-		if row.visible and index == _current_title_selection_index():
-			row.position.x = 294.0 + sin(title_anim_time * 5.0) * 5.0
+		if row.visible:
+			row.position.x = 294.0 + (sin(title_anim_time * 5.0) * 5.0 if index == _current_title_selection_index() else 0.0)
 	if banner_timer > 0.0:
 		banner_timer = max(0.0, banner_timer - delta)
 		var fade_in: float = clamp((banner_duration - banner_timer) / 0.28, 0.0, 1.0)
@@ -108,6 +122,10 @@ func _process(delta: float) -> void:
 		spotlight_container.visible = spotlight_container.modulate.a > 0.02
 	else:
 		spotlight_container.visible = false
+	if reward_container.visible:
+		if reward_anim_timer > 0.0:
+			reward_anim_timer = max(0.0, reward_anim_timer - delta)
+		_update_reward_card_animation()
 
 func _build_ui() -> void:
 	root = Control.new()
@@ -127,21 +145,20 @@ func _build_ui() -> void:
 	side_glow.color = Color(0.45, 0.92, 1.0, 0.65)
 	root.add_child(side_glow)
 
-	var side_title := _make_label("洛天依的奇妙冒险", Vector2(634.0, 34.0), 34, Color(0.88, 0.96, 1.0), 250.0)
+	var side_title := _make_label("弹幕边界幻想", Vector2(634.0, 34.0), 34, Color(0.88, 0.96, 1.0), 250.0)
 	root.add_child(side_title)
 
-	score_value = _make_stat_row("Score", 142.0)
-	best_score_value = _make_stat_row("Best", 190.0)
-	lives_value = _make_stat_row("Lives", 238.0)
-	bombs_value = _make_stat_row("Bombs", 286.0)
-	power_value = _make_stat_row("Power", 334.0)
-	graze_value = _make_stat_row("Graze", 382.0)
-	stage_value = _make_stat_row("Stage", 430.0)
-	state_value = _make_stat_row("State", 478.0)
-	difficulty_value = _make_stat_row("Difficulty", 526.0)
+	score_value = _make_stat_row("分数", 142.0)
+	best_score_value = _make_stat_row("最高分", 190.0)
+	lives_value = _make_stat_row("残机", 238.0)
+	bombs_value = _make_stat_row("灵击", 286.0)
+	power_value = _make_stat_row("火力", 334.0)
+	graze_value = _make_stat_row("擦弹", 382.0)
+	stage_value = _make_stat_row("关卡", 430.0)
+	state_value = _make_stat_row("状态", 478.0)
 
 	var guide := _make_label(
-		"Controls\nZ / Space  Fire / Confirm\nShift      Focus\nX          Bomb\nEsc / P    Pause\n\nMenu\n↑↓ / ←→    Select difficulty\n\nTips\n- 擦弹会稳定涨分\n- 对话中按 Z 可逐句推进\n- 高难度会强化弹速、密度与 Boss 压力",
+		"操作\nZ / Space  射击 / 确认\nShift      低速\nX          灵击\nEsc / P    暂停\n\n菜单\nW / S      选择难度\nA / D      选择自机\n\n提示\n- 安全擦弹可以稳定涨分\n- 对话中按 Z 可继续推进\n- 难度越高，弹速、密度与 Boss 压力越强",
 		Vector2(634.0, 604.0),
 		17,
 		Color(0.88, 0.90, 1.0),
@@ -150,6 +167,15 @@ func _build_ui() -> void:
 	guide.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	guide.size.y = 320.0
 	root.add_child(guide)
+	guide.visible = false
+	menu_board_header = _make_label("模式信息", Vector2(634.0, 604.0), 20, Color(1.0, 0.9, 0.68), 250.0)
+	root.add_child(menu_board_header)
+	menu_board_header.visible = false
+	menu_board_body = _make_label("", Vector2(634.0, 636.0), 16, Color(0.84, 0.92, 1.0), 268.0)
+	menu_board_body.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	menu_board_body.size.y = 260.0
+	root.add_child(menu_board_body)
+	menu_board_body.visible = false
 
 	title_container = Control.new()
 	title_container.set_anchors_preset(Control.PRESET_FULL_RECT)
@@ -158,20 +184,58 @@ func _build_ui() -> void:
 	title_art.position = Vector2(50.0, 30.0)
 	title_art.size = Vector2(500.0, 380.0)
 	title_container.add_child(title_art)
-	title_logo = _make_label("DANMU", Vector2(120.0, 112.0), 56, Color(0.92, 0.98, 1.0), 360.0, HORIZONTAL_ALIGNMENT_CENTER)
+	title_logo = _make_label("弹幕幻想", Vector2(120.0, 112.0), 56, Color(0.92, 0.98, 1.0), 360.0, HORIZONTAL_ALIGNMENT_CENTER)
 	title_container.add_child(title_logo)
-	title_subtitle = _make_label("Boundary Fantasy · Procedural Bullet Opera", Vector2(114.0, 176.0), 20, Color(0.68, 0.9, 1.0), 370.0, HORIZONTAL_ALIGNMENT_CENTER)
+	title_subtitle = _make_label("边界幻想 - 程序化弹幕歌剧", Vector2(114.0, 176.0), 20, Color(0.68, 0.9, 1.0), 370.0, HORIZONTAL_ALIGNMENT_CENTER)
 	title_container.add_child(title_subtitle)
 	title_best = _make_label("", Vector2(124.0, 222.0), 18, Color(1.0, 0.92, 0.72), 350.0, HORIZONTAL_ALIGNMENT_CENTER)
 	title_container.add_child(title_best)
-	var difficulty_header := _make_label("Select Difficulty", Vector2(150.0, 286.0), 22, Color(0.88, 0.96, 1.0), 300.0, HORIZONTAL_ALIGNMENT_CENTER)
+	var difficulty_box := ColorRect.new()
+	difficulty_box.position = Vector2(108.0, 276.0)
+	difficulty_box.size = Vector2(396.0, 162.0)
+	difficulty_box.color = Color(0.06, 0.08, 0.14, 0.32)
+	title_container.add_child(difficulty_box)
+	var difficulty_header := _make_label("选择难度", Vector2(150.0, 286.0), 22, Color(0.88, 0.96, 1.0), 300.0, HORIZONTAL_ALIGNMENT_CENTER)
 	title_container.add_child(difficulty_header)
 	for index in range(4):
-		var row := _make_label("", Vector2(294.0, 326.0 + float(index) * 34.0), 24, Color(0.72, 0.84, 1.0), 140.0, HORIZONTAL_ALIGNMENT_LEFT)
+		var row := _make_label("", Vector2(250.0, 322.0 + float(index) * 30.0), 24, Color(0.72, 0.84, 1.0), 220.0, HORIZONTAL_ALIGNMENT_CENTER)
 		difficulty_labels.append(row)
 		title_container.add_child(row)
-	title_hint = _make_label("↑↓ / ←→ 选择难度 · Z 开始", Vector2(118.0, 480.0), 20, Color(0.84, 0.94, 1.0), 360.0, HORIZONTAL_ALIGNMENT_CENTER)
+	title_hint = _make_label("W/S 难度  -  A/D 自机  -  Shift 模式  -  Z 开始", Vector2(118.0, 480.0), 17, Color(0.84, 0.94, 1.0), 360.0, HORIZONTAL_ALIGNMENT_CENTER)
 	title_container.add_child(title_hint)
+	title_hint.position = Vector2(92.0, 748.0)
+	title_hint.size.x = 420.0
+	title_hint.size.y = 28.0
+	var ship_box := ColorRect.new()
+	ship_box.position = Vector2(108.0, 450.0)
+	ship_box.size = Vector2(396.0, 136.0)
+	ship_box.color = Color(0.06, 0.08, 0.14, 0.32)
+	title_container.add_child(ship_box)
+	var ship_header := _make_label("选择自机", Vector2(150.0, 474.0), 22, Color(0.88, 0.96, 1.0), 300.0, HORIZONTAL_ALIGNMENT_CENTER)
+	title_container.add_child(ship_header)
+	title_ship_label = _make_label("", Vector2(106.0, 506.0), 28, Color(1.0, 0.9, 0.66), 388.0, HORIZONTAL_ALIGNMENT_CENTER)
+	title_container.add_child(title_ship_label)
+	title_ship_description = _make_label("", Vector2(104.0, 546.0), 18, Color(0.82, 0.92, 1.0), 392.0, HORIZONTAL_ALIGNMENT_CENTER)
+	title_ship_description.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	title_ship_description.size.y = 54.0
+	title_container.add_child(title_ship_description)
+	var mode_box := ColorRect.new()
+	mode_box.position = Vector2(108.0, 596.0)
+	mode_box.size = Vector2(396.0, 124.0)
+	mode_box.color = Color(0.06, 0.08, 0.14, 0.32)
+	title_container.add_child(mode_box)
+	var mode_header := _make_label("选择模式", Vector2(150.0, 606.0), 22, Color(0.88, 0.96, 1.0), 300.0, HORIZONTAL_ALIGNMENT_CENTER)
+	title_container.add_child(mode_header)
+	title_mode_label = _make_label("", Vector2(106.0, 636.0), 24, Color(0.84, 0.94, 1.0), 388.0, HORIZONTAL_ALIGNMENT_CENTER)
+	title_container.add_child(title_mode_label)
+	title_mode_description = _make_label("", Vector2(106.0, 668.0), 18, Color(0.8, 0.9, 1.0), 388.0, HORIZONTAL_ALIGNMENT_CENTER)
+	title_mode_description.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	title_mode_description.size.y = 46.0
+	title_container.add_child(title_mode_description)
+	title_controls = _make_label("操作\n移动  WASD / 方向键\n射击  Z / Space\n低速  Shift（标题页切模式）    灵击  X    暂停  Esc", Vector2(98.0, 782.0), 18, Color(0.84, 0.92, 1.0), 408.0, HORIZONTAL_ALIGNMENT_CENTER)
+	title_controls.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	title_controls.size.y = 106.0
+	title_container.add_child(title_controls)
 
 	boss_label = _make_label("", Vector2(playfield_rect.position.x, 8.0), 22, Color(1.0, 0.9, 0.62), playfield_rect.size.x, HORIZONTAL_ALIGNMENT_CENTER)
 	root.add_child(boss_label)
@@ -183,6 +247,36 @@ func _build_ui() -> void:
 	boss_bar.show_percentage = false
 	boss_bar.visible = false
 	root.add_child(boss_bar)
+	boss_multi_container = Control.new()
+	boss_multi_container.position = Vector2(playfield_rect.position.x + 22.0, 8.0)
+	boss_multi_container.size = Vector2(playfield_rect.size.x - 44.0, 92.0)
+	boss_multi_container.visible = false
+	root.add_child(boss_multi_container)
+	for row_index in range(2):
+		var row := Control.new()
+		row.position = Vector2(float(row_index) * 258.0, 0.0)
+		row.size = Vector2(248.0, 44.0)
+		boss_multi_container.add_child(row)
+		var accent := ColorRect.new()
+		accent.position = Vector2.ZERO
+		accent.size = Vector2(248.0, 5.0)
+		accent.color = Color(0.62, 0.96, 1.0, 0.9)
+		row.add_child(accent)
+		var side_bar := ColorRect.new()
+		if row_index == 0:
+			side_bar.position = Vector2(0.0, 8.0)
+		else:
+			side_bar.position = Vector2(242.0, 8.0)
+		side_bar.size = Vector2(6.0, 30.0)
+		row.add_child(side_bar)
+		var label := _make_label("", Vector2(10.0, 6.0), 15, Color(1.0, 0.9, 0.62), 228.0, HORIZONTAL_ALIGNMENT_LEFT if row_index == 0 else HORIZONTAL_ALIGNMENT_RIGHT)
+		row.add_child(label)
+		var bar := ProgressBar.new()
+		bar.position = Vector2(10.0, 24.0)
+		bar.size = Vector2(228.0, 10.0)
+		bar.show_percentage = false
+		row.add_child(bar)
+		boss_multi_rows.append({"row": row, "label": label, "bar": bar, "accent": accent, "side_bar": side_bar, "side": "left" if row_index == 0 else "right"})
 
 	banner_title = _make_label("", Vector2(playfield_rect.position.x, playfield_rect.position.y + 280.0), 32, Color(0.95, 0.97, 1.0), playfield_rect.size.x, HORIZONTAL_ALIGNMENT_CENTER)
 	banner_title.visible = false
@@ -198,7 +292,7 @@ func _build_ui() -> void:
 	root.add_child(overlay)
 	var panel := ColorRect.new()
 	panel.position = Vector2(168.0, 220.0)
-	panel.size = Vector2(624.0, 340.0)
+	panel.size = Vector2(624.0, 440.0)
 	panel.color = Color(0.05, 0.06, 0.12, 0.94)
 	overlay.add_child(panel)
 	var outline_top := ColorRect.new()
@@ -215,6 +309,56 @@ func _build_ui() -> void:
 	overlay_footer = _make_label("", Vector2(220.0, 492.0), 18, Color(0.62, 0.9, 1.0), 520.0, HORIZONTAL_ALIGNMENT_CENTER)
 	overlay_footer.size.y = 90.0
 	overlay.add_child(overlay_footer)
+	reward_container = Control.new()
+	reward_container.position = Vector2(184.0, 392.0)
+	reward_container.size = Vector2(592.0, 206.0)
+	reward_container.visible = false
+	overlay.add_child(reward_container)
+	for card_index in range(3):
+		var card_root := Control.new()
+		card_root.position = Vector2(float(card_index) * 198.0, 0.0)
+		card_root.size = Vector2(182.0, 206.0)
+		reward_container.add_child(card_root)
+		var glow := ColorRect.new()
+		glow.position = Vector2(-4.0, -4.0)
+		glow.size = Vector2(190.0, 214.0)
+		glow.color = Color(0.56, 0.94, 1.0, 0.18)
+		glow.visible = false
+		card_root.add_child(glow)
+		var panel_back := ColorRect.new()
+		panel_back.position = Vector2.ZERO
+		panel_back.size = Vector2(182.0, 206.0)
+		panel_back.color = Color(0.07, 0.08, 0.14, 0.94)
+		card_root.add_child(panel_back)
+		var accent_bar := ColorRect.new()
+		accent_bar.position = Vector2.ZERO
+		accent_bar.size = Vector2(182.0, 5.0)
+		accent_bar.color = Color(0.62, 0.96, 1.0, 0.9)
+		card_root.add_child(accent_bar)
+		var rarity_label := _make_label("", Vector2(12.0, 12.0), 12, Color(0.82, 0.92, 1.0), 158.0, HORIZONTAL_ALIGNMENT_RIGHT)
+		card_root.add_child(rarity_label)
+		var title_label := _make_label("", Vector2(12.0, 24.0), 22, Color(0.98, 0.98, 1.0), 158.0, HORIZONTAL_ALIGNMENT_LEFT)
+		title_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+		title_label.size.y = 52.0
+		card_root.add_child(title_label)
+		var desc_label := _make_label("", Vector2(12.0, 76.0), 15, Color(0.84, 0.9, 1.0), 158.0, HORIZONTAL_ALIGNMENT_LEFT)
+		desc_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+		desc_label.size.y = 72.0
+		card_root.add_child(desc_label)
+		var detail_label := _make_label("", Vector2(12.0, 152.0), 13, Color(0.7, 0.9, 1.0), 158.0, HORIZONTAL_ALIGNMENT_LEFT)
+		detail_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+		detail_label.size.y = 44.0
+		card_root.add_child(detail_label)
+		reward_cards.append({
+			"root": card_root,
+			"glow": glow,
+			"panel": panel_back,
+			"accent": accent_bar,
+			"rarity": rarity_label,
+			"title": title_label,
+			"desc": desc_label,
+			"detail": detail_label
+		})
 
 	dialogue_container = Control.new()
 	dialogue_container.set_anchors_preset(Control.PRESET_FULL_RECT)
@@ -293,6 +437,7 @@ func _make_label(text: String, pos: Vector2, font_size: int, color: Color, width
 	label.position = pos
 	label.size = Vector2(width, 64.0)
 	label.horizontal_alignment = align
+	label.add_theme_font_override("font", DefaultUIFont)
 	label.add_theme_font_size_override("font_size", font_size)
 	label.add_theme_color_override("font_color", color)
 	return label
@@ -309,13 +454,13 @@ func set_status(status: Dictionary) -> void:
 	best_score_value.text = "%09d" % int(status.get("best_score", 0))
 	lives_value.text = "x %d" % int(status.get("lives", 0))
 	bombs_value.text = "x %d" % int(status.get("bombs", 0))
-	power_value.text = "%d / 100" % int(status.get("power", 0))
+	power_value.text = "%d / %d" % [int(status.get("power", 0)), int(status.get("power_max", 100))]
 	graze_value.text = "%d" % int(status.get("graze", 0))
 	stage_value.text = str(status.get("stage_text", ""))
 	state_value.text = str(status.get("state_text", ""))
-	difficulty_value.text = str(status.get("difficulty_text", ""))
 
 func set_boss_state(visible: bool, current_hp: float, max_hp_value: float, phase_name: String) -> void:
+	boss_multi_container.visible = false
 	boss_label.visible = visible
 	boss_bar.visible = visible
 	if not visible:
@@ -324,6 +469,33 @@ func set_boss_state(visible: bool, current_hp: float, max_hp_value: float, phase
 	boss_bar.max_value = max(1.0, max_hp_value)
 	boss_bar.value = clamp(current_hp, 0.0, max_hp_value)
 
+func set_boss_states(states: Array) -> void:
+	if states.is_empty():
+		boss_multi_container.visible = false
+		set_boss_state(false, 0.0, 1.0, "")
+		return
+	if states.size() == 1:
+		var state: Dictionary = states[0]
+		set_boss_state(true, float(state.get("hp", 0.0)), float(state.get("max_hp", 1.0)), str(state.get("phase_name", "首领")))
+		return
+	boss_label.visible = false
+	boss_bar.visible = false
+	boss_multi_container.visible = true
+	for row_index in range(boss_multi_rows.size()):
+		var row_data: Dictionary = boss_multi_rows[row_index]
+		var visible: bool = row_index < states.size()
+		row_data["row"].visible = visible
+		if not visible:
+			continue
+		var state: Dictionary = states[row_index]
+		var accent_color: Color = state.get("accent_color", Color(0.62, 0.96, 1.0))
+		row_data["label"].text = str(state.get("phase_name", "首领 %d" % (row_index + 1)))
+		row_data["label"].add_theme_color_override("font_color", Color(1.0, 0.96, 0.9) if row_data["side"] == "left" else Color(0.9, 0.98, 1.0))
+		row_data["accent"].color = Color(accent_color.r, accent_color.g, accent_color.b, 0.95)
+		row_data["side_bar"].color = Color(accent_color.r, accent_color.g, accent_color.b, 0.95)
+		row_data["bar"].max_value = max(1.0, float(state.get("max_hp", 1.0)))
+		row_data["bar"].value = clamp(float(state.get("hp", 0.0)), 0.0, float(state.get("max_hp", 1.0)))
+
 func flash(color: Color, alpha := 0.6, duration := 0.25) -> void:
 	flash_rect.color = ColorFx.alpha(color, alpha)
 	flash_peak_alpha = alpha
@@ -331,19 +503,24 @@ func flash(color: Color, alpha := 0.6, duration := 0.25) -> void:
 	flash_timer = duration
 	flash_rect.visible = true
 
-func show_title(best_score: int, difficulty_names := [], selected_index := 1) -> void:
+func show_title(best_score: int, difficulty_names := [], selected_index := 1, ship_label := "灵枢型", ship_description := "", mode_label := "剧情模式", mode_description := "", board_title := "模式信息", board_body := "") -> void:
 	overlay.visible = false
 	dialogue_container.visible = false
 	title_container.visible = true
-	title_best.text = "Best Score  %09d" % best_score
+	menu_board_header.visible = true
+	menu_board_body.visible = true
+	title_best.text = "最高分  %09d" % best_score
 	if difficulty_names.is_empty():
-		difficulty_names = ["Easy", "Normal", "Hard", "Lunatic"]
-	_update_title_difficulties(difficulty_names, selected_index)
+		difficulty_names = ["简单", "普通", "困难", "狂气"]
+	_update_title_menu(difficulty_names, selected_index, ship_label, ship_description, mode_label, mode_description, board_title, board_body)
 
 func update_title_difficulty(difficulty_names: Array, selected_index: int) -> void:
-	_update_title_difficulties(difficulty_names, selected_index)
+	_update_title_menu(difficulty_names, selected_index, title_ship_label.text.replace("< ", "").replace(" >", ""), title_ship_description.text, title_mode_label.text.replace("< ", "").replace(" >", ""), title_mode_description.text, menu_board_header.text, menu_board_body.text)
 
-func _update_title_difficulties(difficulty_names: Array, selected_index: int) -> void:
+func update_title_menu(difficulty_names: Array, selected_index: int, ship_label := "灵枢型", ship_description := "", mode_label := "剧情模式", mode_description := "", board_title := "模式信息", board_body := "") -> void:
+	_update_title_menu(difficulty_names, selected_index, ship_label, ship_description, mode_label, mode_description, board_title, board_body)
+
+func _update_title_menu(difficulty_names: Array, selected_index: int, ship_label: String, ship_description: String, mode_label: String, mode_description: String, board_title: String, board_body: String) -> void:
 	for index in range(difficulty_labels.size()):
 		var label: Label = difficulty_labels[index]
 		if index < difficulty_names.size():
@@ -355,7 +532,13 @@ func _update_title_difficulties(difficulty_names: Array, selected_index: int) ->
 		else:
 			label.visible = false
 	title_art.set_palette(Color(0.56 + float(selected_index) * 0.08, 0.88, 1.0), Color(1.0, 0.74, 0.46 + 0.08 * float(selected_index)))
-	title_hint.text = "↑↓ / ←→ 选择难度 · Z 开始  · 当前：%s" % difficulty_names[selected_index]
+	title_ship_label.text = "< %s >" % ship_label
+	title_ship_description.text = ship_description
+	title_mode_label.text = "< %s >" % mode_label
+	title_mode_description.text = mode_description
+	menu_board_header.text = board_title
+	menu_board_body.text = board_body
+	title_hint.text = "W/S 选择难度  -  A/D 选择自机  -  Z 开始  -  当前：%s" % difficulty_names[selected_index]
 	title_container.set_meta("selected_index", selected_index)
 
 func _current_title_selection_index() -> int:
@@ -363,33 +546,113 @@ func _current_title_selection_index() -> int:
 
 func hide_title() -> void:
 	title_container.visible = false
+	menu_board_header.visible = false
+	menu_board_body.visible = false
 
 func show_pause() -> void:
-	set_overlay("Paused", "战斗已暂停。\n继续观察弹幕节奏，再选择回到战场。", "按 Esc / Z 继续 · 按 X 回标题")
+	set_overlay("暂停中", "战斗已暂停。\n先观察弹幕节奏，再回到战场吧。", "Esc / Z 继续  -  X 返回标题")
 
 func show_stage_transition(stage_number: int, title: String, subtitle: String) -> void:
-	set_overlay("Stage %d" % stage_number, "%s\n\n%s" % [title, subtitle], "短暂整备后自动进入下一关")
+	set_overlay("第 %d 关" % stage_number, "%s\n\n%s" % [title, subtitle], "短暂整备后将自动进入下一关。")
 
 func hide_overlay() -> void:
 	overlay.visible = false
 
 func show_result(victory: bool, score: int, best_score: int) -> void:
-	var title := "Game Over"
+	var title := "游戏结束"
 	if victory:
-		title = "All Clear"
+		title = "通关"
 	var body := "最终得分：%09d\n最高分：%09d" % [score, best_score]
 	if victory:
-		body += "\n\n你成功突破了两道边界与双 Boss 压制。"
+		body += "\n\n你突破了所有边界，并击败了全部 Boss。"
 	else:
-		body += "\n\n再试一次，把 Bomb 和擦弹利用得更极致。"
-	set_overlay(title, body, "按 Z 重新挑战 · 按 Esc 回标题")
+		body += "\n\n再试一次，把灵击时机和擦弹路线利用得更极致吧。"
+	set_overlay(title, body, "Z 重新挑战  -  Esc 返回标题")
+
+func _reset_overlay_layout() -> void:
+	reward_container.visible = false
+	reward_anim_timer = 0.0
+	reward_anim_duration = 0.0
+	overlay_header.position = Vector2(200.0, 268.0)
+	overlay_header.size = Vector2(560.0, 64.0)
+	overlay_header.add_theme_font_size_override("font_size", 38)
+	overlay_body.position = Vector2(220.0, 336.0)
+	overlay_body.size = Vector2(520.0, 150.0)
+	overlay_body.add_theme_font_size_override("font_size", 22)
+	overlay_body.visible = true
+	overlay_footer.position = Vector2(220.0, 492.0)
+	overlay_footer.size = Vector2(520.0, 90.0)
+	overlay_footer.add_theme_font_size_override("font_size", 18)
+	overlay_footer.visible = true
 
 func set_overlay(header: String, body: String, footer: String) -> void:
 	overlay.visible = true
+	_reset_overlay_layout()
 	overlay_header.text = header
 	overlay_body.text = body
 	overlay_footer.text = footer
 	dialogue_container.visible = false
+
+func show_reward_selection(title: String, subtitle: String, options: Array, selected_index: int, refreshes_left := 0, locked := false, restart_anim := false) -> void:
+	overlay.visible = true
+	_reset_overlay_layout()
+	overlay_header.text = title
+	overlay_body.position = Vector2(206.0, 338.0)
+	overlay_body.size = Vector2(548.0, 54.0)
+	overlay_body.add_theme_font_size_override("font_size", 18)
+	overlay_body.text = subtitle
+	reward_container.visible = true
+	if restart_anim:
+		reward_anim_duration = 0.34
+		reward_anim_timer = reward_anim_duration
+	for card_index in range(reward_cards.size()):
+		var card_nodes: Dictionary = reward_cards[card_index]
+		var active: bool = card_index < options.size()
+		card_nodes["root"].visible = active
+		if not active:
+			continue
+		var option: Dictionary = options[card_index]
+		var rarity_color: Color = option.get("rarity_color", Color(0.62, 0.96, 1.0))
+		var accent_color: Color = option.get("accent_color", rarity_color)
+		var selected: bool = card_index == selected_index
+		card_nodes["glow"].visible = selected
+		card_nodes["glow"].color = Color(accent_color.r, accent_color.g, accent_color.b, 0.22 if selected else 0.0)
+		card_nodes["panel"].color = Color(0.09, 0.1, 0.16, 0.98) if selected else Color(0.06, 0.07, 0.12, 0.94)
+		card_nodes["accent"].color = Color(accent_color.r, accent_color.g, accent_color.b, 0.95)
+		card_nodes["rarity"].text = str(option.get("rarity_label", "COMMON"))
+		card_nodes["rarity"].add_theme_color_override("font_color", rarity_color)
+		card_nodes["title"].text = str(option.get("label", "强化"))
+		card_nodes["title"].add_theme_color_override("font_color", Color(1.0, 1.0, 1.0) if selected else Color(0.94, 0.96, 1.0))
+		card_nodes["desc"].text = str(option.get("description", ""))
+		card_nodes["detail"].text = str(option.get("detail", ""))
+		card_nodes["detail"].add_theme_color_override("font_color", Color(accent_color.r, accent_color.g, accent_color.b, 0.92))
+	overlay_footer.position = Vector2(206.0, 610.0)
+	overlay_footer.size = Vector2(548.0, 64.0)
+	overlay_footer.text = "奖励展开中……" if locked else ("A / D / W / S 选择   Z 确认   Shift 刷新卡池（剩余 %d 次）" % refreshes_left)
+	dialogue_container.visible = false
+	_update_reward_card_animation()
+
+func _update_reward_card_animation() -> void:
+	var reveal := 1.0
+	if reward_anim_duration > 0.0:
+		reveal = 1.0 - reward_anim_timer / max(reward_anim_duration, 0.0001)
+		reveal = clamp(reveal, 0.0, 1.0)
+		reveal = reveal * reveal * (3.0 - 2.0 * reveal)
+	for card_data_variant in reward_cards:
+		var card_data: Dictionary = card_data_variant
+		var root_card: Control = card_data["root"]
+		if not root_card.visible:
+			continue
+		var base_position: Vector2 = Vector2(0.0, 0.0)
+		if card_data.has("base_pos"):
+			base_position = card_data["base_pos"]
+		else:
+			base_position = root_card.position
+			card_data["base_pos"] = base_position
+		root_card.position = Vector2(base_position.x, base_position.y + (1.0 - reveal) * 24.0)
+		root_card.modulate.a = reveal
+	overlay_body.modulate.a = 0.35 + 0.65 * reveal
+	overlay_footer.modulate.a = 0.35 + 0.65 * reveal
 
 func show_banner(title: String, subtitle: String) -> void:
 	banner_title.text = title
@@ -465,7 +728,7 @@ func show_boss_spotlight(config: Dictionary, duration := 2.4) -> void:
 	spotlight_phase.text = str(config.get("phase_name", ""))
 	spotlight_phase.visible = spotlight_phase.text != ""
 	spotlight_phase.add_theme_color_override("font_color", ColorFx.alpha(accent.lightened(0.18), 0.96))
-	spotlight_title.text = str(config.get("name", "Boss"))
+	spotlight_title.text = str(config.get("name", "首领"))
 	spotlight_title.add_theme_color_override("font_color", ColorFx.alpha(accent.lightened(0.28), 0.98))
 	spotlight_subtitle.text = str(config.get("subtitle", ""))
 	spotlight_subtitle.add_theme_color_override("font_color", ColorFx.alpha(secondary.lightened(0.08), 0.94))

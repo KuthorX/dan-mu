@@ -39,7 +39,8 @@ func _physics_process(delta: float) -> void:
 	if not homing:
 		velocity.y = min(velocity.y + 240.0 * delta, 145.0)
 		velocity.x = lerp(velocity.x, 0.0, delta * 1.4)
-		if game.point_of_collection_active() or global_position.distance_squared_to(player.global_position) <= pow(110.0, 2.0):
+		var homing_radius: float = 110.0 + game.get_pickup_magnet_bonus()
+		if game.point_of_collection_active() or global_position.distance_squared_to(player.global_position) <= pow(homing_radius, 2.0):
 			homing = true
 	else:
 		var direction: Vector2 = (player.global_position - global_position).normalized()

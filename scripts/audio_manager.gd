@@ -24,10 +24,16 @@ func play_title_theme() -> void:
 	_play_bgm("title")
 
 func play_stage_theme(stage_number: int) -> void:
-	_play_bgm("stage_%d" % stage_number)
+	var key := "stage_%d" % stage_number
+	if not bgm_streams.has(key):
+		key = "stage_2"
+	_play_bgm(key)
 
 func play_boss_theme(stage_number: int) -> void:
-	_play_bgm("boss_%d" % stage_number)
+	var key := "boss_%d" % stage_number
+	if not bgm_streams.has(key):
+		key = "boss_2"
+	_play_bgm(key)
 
 func stop_bgm() -> void:
 	current_bgm_key = ""
@@ -42,9 +48,9 @@ func play_pause() -> void:
 
 func play_player_shot(focus_ratio: float) -> void:
 	if focus_ratio > 0.55:
-		_play_sfx("shot_focus", 0.04, -12.0)
+		_play_sfx("shot_focus", 0.04, -16.5)
 	else:
-		_play_sfx("shot", 0.04, -12.0)
+		_play_sfx("shot", 0.04, -16.5)
 
 func play_enemy_fire(pattern: StringName) -> void:
 	match pattern:
@@ -127,6 +133,8 @@ func _build_streams() -> void:
 	bgm_streams["boss_1"] = _build_song_stream(_song_boss_one())
 	bgm_streams["stage_2"] = _build_song_stream(_song_stage_two())
 	bgm_streams["boss_2"] = _build_song_stream(_song_boss_two())
+	bgm_streams["stage_5"] = _build_song_stream(_song_endless_stage())
+	bgm_streams["boss_5"] = _build_song_stream(_song_endless_boss())
 	sfx_streams["confirm"] = _build_confirm_stream()
 	sfx_streams["pause"] = _build_pause_stream()
 	sfx_streams["shot"] = _build_shot_stream(false)
@@ -224,6 +232,40 @@ func _song_boss_two() -> Dictionary:
 	var bass_b: Array = [50, -1, 50, -1, 52, -1, 52, -1, 53, -1, 53, -1, 52, -1, 52, -1]
 	return {
 		"bpm": 162.0,
+		"lead": _cat([lead_a, lead_b, lead_a, lead_b]),
+		"counter": _cat([arp_a, arp_b, arp_a, arp_b]),
+		"bass": _cat([bass_a, bass_a, bass_b, bass_b]),
+		"kick": _cat([_dense_kick(), _dense_kick(), _dense_kick(), _dense_kick()]),
+		"snare": _cat([_dense_snare(), _dense_snare(), _dense_snare(), _dense_snare()]),
+		"hat": _repeat_hits(64, 1)
+	}
+
+func _song_endless_stage() -> Dictionary:
+	var lead_a: Array = [84, -1, 88, -1, 91, -1, 93, -1, 91, -1, 88, -1, 84, -1, 81, -1]
+	var lead_b: Array = [86, -1, 89, -1, 93, -1, 96, -1, 93, -1, 89, -1, 86, -1, 84, -1]
+	var arp_a: Array = [72, 79, 84, 88, 74, 81, 86, 89, 76, 83, 88, 91, 77, 84, 89, 93]
+	var arp_b: Array = [74, 81, 86, 89, 76, 83, 88, 91, 77, 84, 89, 93, 79, 86, 91, 96]
+	var bass_a: Array = [45, -1, -1, -1, 45, -1, -1, -1, 48, -1, -1, -1, 48, -1, -1, -1]
+	var bass_b: Array = [50, -1, -1, -1, 50, -1, -1, -1, 53, -1, -1, -1, 53, -1, -1, -1]
+	return {
+		"bpm": 156.0,
+		"lead": _cat([lead_a, lead_b, lead_a, lead_b]),
+		"counter": _cat([arp_a, arp_b, arp_a, arp_b]),
+		"bass": _cat([bass_a, bass_a, bass_b, bass_b]),
+		"kick": _cat([_dense_kick(), _dense_kick(), _dense_kick(), _dense_kick()]),
+		"snare": _cat([_backbeat(), _backbeat(), _backbeat(), _backbeat()]),
+		"hat": _repeat_hits(64, 1)
+	}
+
+func _song_endless_boss() -> Dictionary:
+	var lead_a: Array = [95, -1, 93, -1, 91, -1, 89, -1, 88, -1, 86, -1, 84, -1, 83, -1]
+	var lead_b: Array = [96, -1, 95, -1, 93, -1, 91, -1, 89, -1, 88, -1, 86, -1, 84, -1]
+	var arp_a: Array = [79, 86, 91, 95, 77, 84, 89, 93, 76, 83, 88, 91, 74, 81, 86, 89]
+	var arp_b: Array = [81, 88, 93, 96, 79, 86, 91, 95, 77, 84, 89, 93, 76, 83, 88, 91]
+	var bass_a: Array = [43, -1, 43, -1, 45, -1, 45, -1, 48, -1, 48, -1, 50, -1, 50, -1]
+	var bass_b: Array = [41, -1, 41, -1, 43, -1, 43, -1, 46, -1, 46, -1, 48, -1, 48, -1]
+	return {
+		"bpm": 170.0,
 		"lead": _cat([lead_a, lead_b, lead_a, lead_b]),
 		"counter": _cat([arp_a, arp_b, arp_a, arp_b]),
 		"bass": _cat([bass_a, bass_a, bass_b, bass_b]),

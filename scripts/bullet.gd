@@ -50,6 +50,9 @@ func setup(game_ref, spawn_pos: Vector2, velocity_vector: Vector2, bullet_factio
 	accel = options.get("accel", 0.0)
 	turn_rate = options.get("turn_rate", 0.0)
 	visual_rotation = velocity_vector.angle() + PI * 0.5
+	rotation = visual_rotation
+	scale = Vector2.ONE * visual_scale
+	queue_redraw()
 	return self
 
 func _enter_tree() -> void:
@@ -64,10 +67,11 @@ func _physics_process(delta: float) -> void:
 	if destroyed or not game or not game.is_gameplay_active():
 		return
 	age += delta
-	visual_rotation += rotation_speed * delta
 	if age >= life_time:
 		destroy(false)
 		return
+	if rotation_speed != 0.0:
+		visual_rotation += rotation_speed * delta
 	if wave_amplitude != 0.0 and speed > 0.0:
 		if accel_after >= 0.0 and age >= accel_after:
 			speed += accel * delta
@@ -83,15 +87,34 @@ func _physics_process(delta: float) -> void:
 		if velocity.length_squared() > 0.001:
 			speed = velocity.length()
 			base_direction = velocity.normalized()
+			if turn_rate != 0.0:
+				visual_rotation = base_direction.angle() + PI * 0.5
+	rotation = visual_rotation
 	if faction == &"enemy":
 		_check_player_collision()
 	else:
 		if game.try_player_bullet_hit(self):
 			destroy(true)
 			return
-	queue_redraw()
-	if not game.get_extended_playfield_rect(96.0).has_point(global_position):
-		destroy(false)
+	_update_visibility_and_bounds()
+
+func _update_visibility_and_bounds() -> void:
+	if faction == &"player":
+		var left_bound: float = game.playfield_rect.position.x + 1.0
+		var right_bound: float = game.playfield_rect.position.x + game.playfield_rect.size.x - 1.0
+		var top_bound: float = game.playfield_rect.position.y - 24.0
+		var bottom_bound: float = game.playfield_rect.position.y + game.playfield_rect.size.y + 10.0
+		visible = global_position.x >= left_bound and global_position.x <= right_bound and global_position.y >= top_bound and global_position.y <= bottom_bound
+		if global_position.y < game.playfield_rect.position.y - 40.0:
+			destroy(false)
+			return
+		if global_position.x < game.playfield_rect.position.x - 14.0 or global_position.x > game.playfield_rect.position.x + game.playfield_rect.size.x + 14.0:
+			destroy(false)
+			return
+	else:
+		visible = true
+		if not game.get_extended_playfield_rect(96.0).has_point(global_position):
+			destroy(false)
 
 func _check_player_collision() -> void:
 	var player = game.player
@@ -111,7 +134,7 @@ func destroy(show_effect := true, cancelled := false) -> void:
 	if destroyed:
 		return
 	destroyed = true
-	if show_effect and game:
+	if show_effect and game and not game.should_reduce_minor_fx():
 		var burst_color := color.lightened(0.2)
 		if cancelled:
 			burst_color = Color(0.8, 0.96, 1.0)
@@ -119,7 +142,6 @@ func destroy(show_effect := true, cancelled := false) -> void:
 	queue_free()
 
 func _draw() -> void:
-	draw_set_transform(Vector2.ZERO, visual_rotation, Vector2.ONE * visual_scale)
 	match shape:
 		&"diamond":
 			var diamond := PackedVector2Array([
@@ -162,4 +184,3 @@ func _draw() -> void:
 			draw_circle(Vector2.ZERO, radius * 1.08, ColorFx.alpha(color, 0.25))
 			draw_circle(Vector2.ZERO, radius, ColorFx.alpha(color, 0.95))
 			draw_circle(Vector2.ZERO, radius * 0.38, ColorFx.alpha(color.lightened(0.3), 0.95))
-	draw_set_transform(Vector2.ZERO, 0.0, Vector2.ONE)

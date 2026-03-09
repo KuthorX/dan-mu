@@ -197,6 +197,75 @@ func _fire_pattern() -> void:
 				"radius": 5.2,
 				"rotation_speed": 0.9
 			})
+		&"cross_fan":
+			shoot_interval = randf_range(0.78, 1.02)
+			base_angle += rotation_step
+			var cross_angle: float = game.angle_to_player(global_position)
+			game.spawn_fan(global_position, cross_angle, max(3, shot_count), spread_deg, bullet_speed, &"enemy", {
+				"shape": bullet_shape,
+				"color": bullet_color,
+				"radius": 5.6
+			})
+			for cross_offset in [0.0, PI * 0.5, PI, PI * 1.5]:
+				var cross_velocity: Vector2 = Vector2.RIGHT.rotated(base_angle + float(cross_offset)) * bullet_speed * 0.72
+				game.spawn_enemy_bullet(global_position, cross_velocity, {
+					"shape": &"diamond",
+					"color": bullet_color.lightened(0.14),
+					"radius": 4.9,
+					"accel_after": 0.5,
+					"accel": 52.0,
+					"rotation_speed": 1.2
+				})
+		&"pinwheel":
+			shoot_interval = randf_range(0.22, 0.32)
+			base_angle += rotation_step
+			for blade in range(4):
+				var blade_angle: float = base_angle + TAU * float(blade) / 4.0
+				game.spawn_enemy_bullet(global_position, Vector2.RIGHT.rotated(blade_angle) * bullet_speed, {
+					"shape": &"needle",
+					"color": bullet_color,
+					"radius": 4.9,
+					"wave_amplitude": 7.0,
+					"wave_frequency": 4.8,
+					"wave_phase": float(blade) * 0.6
+				})
+		&"split_fan":
+			shoot_interval = randf_range(0.82, 1.06)
+			var split_angle: float = game.angle_to_player(global_position)
+			game.spawn_fan(global_position, split_angle - 0.26, max(3, shot_count), spread_deg * 0.72, bullet_speed, &"enemy", {
+				"shape": bullet_shape,
+				"color": bullet_color,
+				"radius": 5.5
+			})
+			game.spawn_fan(global_position, split_angle + 0.26, max(3, shot_count), spread_deg * 0.72, bullet_speed, &"enemy", {
+				"shape": bullet_shape,
+				"color": bullet_color.lightened(0.1),
+				"radius": 5.2
+			})
+			game.spawn_enemy_bullet(global_position, Vector2.RIGHT.rotated(split_angle) * bullet_speed * 0.86, {
+				"shape": &"orb",
+				"color": bullet_color,
+				"radius": 5.8,
+				"accel_after": 0.48,
+				"accel": 62.0
+			})
+		&"mine_burst":
+			shoot_interval = randf_range(1.02, 1.28)
+			base_angle += rotation_step
+			game.spawn_radial_burst(global_position, max(6, ring_count), bullet_speed * 0.56, base_angle, &"enemy", {
+				"shape": &"orb",
+				"color": bullet_color,
+				"radius": 5.9,
+				"accel_after": 0.72,
+				"accel": 82.0,
+				"rotation_speed": 0.8
+			})
+			var burst_angle: float = game.angle_to_player(global_position)
+			game.spawn_fan(global_position, burst_angle, max(3, shot_count - 1), spread_deg * 0.9, bullet_speed * 0.82, &"enemy", {
+				"shape": &"needle",
+				"color": bullet_color.lightened(0.12),
+				"radius": 4.8
+			})
 	game.on_enemy_fired(shoot_pattern)
 
 func take_damage(amount: float) -> void:
@@ -234,6 +303,22 @@ func _draw() -> void:
 			body_color = Color(0.62, 1.0, 0.92)
 		"guardian":
 			body_color = Color(0.72, 0.78, 1.0)
+		"caster":
+			body_color = Color(0.98, 0.7, 1.0)
+		"sentinel":
+			body_color = Color(1.0, 0.78, 0.56)
+		"veilwing":
+			body_color = Color(0.64, 0.94, 1.0)
+		"bloomer":
+			body_color = Color(1.0, 0.7, 0.84)
+		"anchor":
+			body_color = Color(0.78, 0.82, 1.0)
+		"shade":
+			body_color = Color(0.74, 0.62, 1.0)
+		"mirror":
+			body_color = Color(0.78, 1.0, 0.96)
+		"reaper":
+			body_color = Color(1.0, 0.64, 0.58)
 	if flash_timer > 0.0:
 		body_color = Color.WHITE
 	var wing: float = 8.0 + sin(age * 6.0 + wobble) * 1.8

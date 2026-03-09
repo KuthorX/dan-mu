@@ -93,6 +93,10 @@ func _physics_process(delta: float) -> void:
 			_pattern_comet_refinery(delta)
 		&"boundary_collapse":
 			_pattern_boundary_collapse(delta)
+		&"eclipse_lattice":
+			_pattern_eclipse_lattice(delta)
+		&"crown_judgment":
+			_pattern_crown_judgment(delta)
 	queue_redraw()
 
 func _update_movement(delta: float) -> void:
@@ -157,7 +161,7 @@ func defeat() -> void:
 	game.cancel_all_enemy_bullets(true)
 	game.spawn_explosion_effect(global_position, Color(1.0, 0.88, 0.65), 72.0, 1.0)
 	game.spawn_spark_effect(global_position, current_color.lightened(0.25), 96.0, 0.65, 30)
-	game.on_boss_defeated()
+	game.on_boss_defeated(self)
 	queue_free()
 
 func is_targetable() -> bool:
@@ -475,6 +479,91 @@ func _pattern_boundary_collapse(delta: float) -> void:
 			"color": Color(0.96, 0.98, 1.0),
 			"radius": 4.9
 		})
+
+func _pattern_eclipse_lattice(delta: float) -> void:
+	shoot_a -= delta
+	shoot_b -= delta
+	shoot_c -= delta
+	pattern_angle += delta * 1.3
+	if shoot_a <= 0.0:
+		shoot_a = _fire_interval(0.18)
+		var lane_count: int = _lane_count(7, 5)
+		var lane_step: float = (game.playfield_rect.size.x - 110.0) / float(max(1, lane_count - 1))
+		for lane in range(lane_count):
+			var x: float = game.playfield_rect.position.x + 55.0 + float(lane) * lane_step
+			var origin := Vector2(x, game.playfield_rect.position.y - 14.0)
+			game.spawn_enemy_bullet(origin, Vector2(0.0, _bullet_speed(170.0 + float(lane % 2) * 26.0)), {
+				"shape": &"diamond",
+				"color": Color(0.62, 0.94, 1.0) if lane % 2 == 0 else Color(1.0, 0.66, 0.58),
+				"radius": 5.2,
+				"wave_amplitude": 8.0,
+				"wave_frequency": 4.2,
+				"wave_phase": float(lane) * 0.45
+			})
+	if shoot_b <= 0.0:
+		shoot_b = _fire_interval(0.62)
+		for side_x in [game.playfield_rect.position.x + 18.0, game.playfield_rect.position.x + game.playfield_rect.size.x - 18.0]:
+			for row in range(_lane_count(5, 4)):
+				var origin := Vector2(side_x, game.playfield_rect.position.y + 72.0 + float(row) * 40.0)
+				var target_angle: float = game.angle_to_player(origin) + deg_to_rad((float(row) - 2.0) * 5.0)
+				game.spawn_enemy_bullet(origin, Vector2.RIGHT.rotated(target_angle) * _bullet_speed(238.0), {
+					"shape": &"needle",
+					"color": Color(1.0, 0.86, 0.58),
+					"radius": 4.8
+				})
+	if shoot_c <= 0.0:
+		shoot_c = _fire_interval(1.05)
+		game.spawn_radial_burst(global_position, _count(18, 2, 12), _bullet_speed(148.0), pattern_angle, &"enemy", {
+			"shape": &"orb",
+			"color": Color(0.86, 0.58, 1.0),
+			"radius": 5.8,
+			"accel_after": 0.8,
+			"accel": 88.0
+		})
+
+func _pattern_crown_judgment(delta: float) -> void:
+	shoot_a -= delta
+	shoot_b -= delta
+	shoot_c -= delta
+	pattern_angle += delta * 1.9
+	if shoot_a <= 0.0:
+		shoot_a = _fire_interval(0.12)
+		var burst_count: int = _count(14, 2, 10)
+		game.spawn_radial_burst(global_position, burst_count, _bullet_speed(220.0), pattern_angle, &"enemy", {
+			"shape": &"star",
+			"color": Color(1.0, 0.82, 0.52),
+			"radius": 5.0,
+			"rotation_speed": 3.2
+		})
+	if shoot_b <= 0.0:
+		shoot_b = _fire_interval(0.42)
+		for offset_value in [-1.0, 1.0]:
+			var side: float = float(offset_value)
+			var origin := global_position + Vector2(side * 70.0, 0.0)
+			var aim_angle: float = game.angle_to_player(origin) + side * deg_to_rad(12.0)
+			game.spawn_fan(origin, aim_angle, _count(6, 2, 4), 54.0, _bullet_speed(252.0), &"enemy", {
+				"shape": &"petal",
+				"color": Color(1.0, 0.66, 0.54) if side < 0.0 else Color(0.66, 0.96, 1.0),
+				"radius": 5.6,
+				"wave_amplitude": 9.0,
+				"wave_frequency": 4.6,
+				"wave_phase": side * 0.7
+			})
+	if shoot_c <= 0.0:
+		shoot_c = _fire_interval(0.94)
+		var top_count: int = _lane_count(6, 4)
+		var step_x: float = (game.playfield_rect.size.x - 120.0) / float(max(1, top_count - 1))
+		for column in range(top_count):
+			var origin := Vector2(game.playfield_rect.position.x + 60.0 + float(column) * step_x, game.playfield_rect.position.y - 16.0)
+			var target := Vector2(game.playfield_rect.position.x + 60.0 + float(column) * step_x, game.playfield_rect.position.y + 220.0)
+			var direction: Vector2 = (target - origin).normalized() * _bullet_speed(205.0)
+			game.spawn_enemy_bullet(origin, direction, {
+				"shape": &"diamond",
+				"color": Color(0.88, 0.62, 1.0),
+				"radius": 5.4,
+				"accel_after": 0.65,
+				"accel": 110.0
+			})
 
 func _draw() -> void:
 	var body_color: Color = current_color
