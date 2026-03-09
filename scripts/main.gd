@@ -473,7 +473,7 @@ func spawn_boss(config := {}) -> void:
 	enemy_layer.add_child(new_boss)
 	background.trigger_pulse(boss_config.get("accent_color", Color(1.0, 0.84, 0.6)), 0.32, 0.65)
 	hud.flash(boss_config.get("accent_color", Color(1.0, 0.84, 0.6)), 0.5, 0.4)
-	hud.show_boss_spotlight(boss_config, 2.6)
+	hud.show_boss_spotlight(_boss_spotlight_config(), 2.6)
 	shake_screen(0.8, 6.0)
 	audio.play_boss_theme(current_stage)
 
@@ -488,6 +488,28 @@ func _scaled_boss_config(config: Dictionary) -> Dictionary:
 		new_phases.append(entry)
 	adjusted["phases"] = new_phases
 	return adjusted
+
+func _boss_spotlight_config(phase_name := "") -> Dictionary:
+	var spotlight: Dictionary = current_boss_config.duplicate(true)
+	if spotlight.is_empty():
+		return spotlight
+	if phase_name == "":
+		spotlight["quote"] = str(spotlight.get("quote", ""))
+		return spotlight
+	spotlight["phase_name"] = phase_name
+	var phases: Array = spotlight.get("phases", [])
+	for phase_data in phases:
+		var phase: Dictionary = phase_data
+		if str(phase.get("name", "")) != phase_name:
+			continue
+		spotlight["accent_color"] = phase.get("color", spotlight.get("accent_color", Color(1.0, 0.82, 0.52)))
+		spotlight["subtitle"] = str(phase.get("subtitle", spotlight.get("subtitle", "")))
+		spotlight["mood"] = str(phase.get("mood", spotlight.get("mood", "calm")))
+		spotlight["motif"] = str(phase.get("motif", spotlight.get("motif", "ribbon")))
+		spotlight["portrait_side"] = str(phase.get("portrait_side", spotlight.get("portrait_side", "right")))
+		spotlight["quote"] = str(phase.get("quote", spotlight.get("quote", "")))
+		break
+	return spotlight
 
 func try_player_bullet_hit(bullet) -> bool:
 	if boss and is_instance_valid(boss) and boss.is_targetable():
@@ -691,11 +713,12 @@ func _finish_dialogue() -> void:
 func on_boss_phase_changed(phase_name: String, current_hp: float, max_hp_value: float) -> void:
 	hud.set_boss_state(true, current_hp, max_hp_value, phase_name)
 	if phase_name != "Phase Break":
-		show_banner(phase_name, "小心阅读弹流间的空隙")
-		hud.flash(Color(1.0, 0.92, 0.68), 0.32, 0.26)
-		background.trigger_pulse(Color(1.0, 0.82, 0.52), 0.18, 0.26)
-		if phase_name.begins_with("Last Spell") and not current_boss_config.is_empty():
-			hud.show_boss_spotlight(current_boss_config, 2.1)
+		var spotlight_config: Dictionary = _boss_spotlight_config(phase_name)
+		var pulse_color: Color = spotlight_config.get("accent_color", Color(1.0, 0.82, 0.52))
+		show_banner(phase_name, str(spotlight_config.get("subtitle", "小心阅读弹流间的空隙")))
+		hud.flash(pulse_color, 0.32, 0.26)
+		background.trigger_pulse(pulse_color, 0.18, 0.26)
+		hud.show_boss_spotlight(spotlight_config, 2.15 if phase_name.begins_with("Last Spell") else 1.75)
 		audio.play_phase_break()
 
 func on_boss_phase_cleared(phase_name: String) -> void:

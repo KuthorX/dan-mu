@@ -52,6 +52,8 @@ var dialogue_active := false
 var spotlight_container: Control
 var spotlight_title: Label
 var spotlight_subtitle: Label
+var spotlight_phase: Label
+var spotlight_quote: Label
 var spotlight_portrait
 var spotlight_timer := 0.0
 var spotlight_duration := 0.0
@@ -251,22 +253,33 @@ func _build_ui() -> void:
 
 	spotlight_container = Control.new()
 	spotlight_container.position = Vector2(316.0, 120.0)
-	spotlight_container.size = Vector2(270.0, 310.0)
+	spotlight_container.size = Vector2(270.0, 344.0)
 	spotlight_container.visible = false
 	root.add_child(spotlight_container)
 	var spot_back := ColorRect.new()
 	spot_back.position = Vector2.ZERO
-	spot_back.size = Vector2(270.0, 310.0)
+	spot_back.size = Vector2(270.0, 344.0)
 	spot_back.color = Color(0.05, 0.06, 0.12, 0.84)
 	spotlight_container.add_child(spot_back)
+	var spot_line := ColorRect.new()
+	spot_line.position = Vector2(0.0, 0.0)
+	spot_line.size = Vector2(270.0, 4.0)
+	spot_line.color = Color(0.96, 0.88, 0.62, 0.88)
+	spotlight_container.add_child(spot_line)
+	spotlight_phase = _make_label("", Vector2(16.0, 10.0), 18, Color(1.0, 0.88, 0.62), 238.0, HORIZONTAL_ALIGNMENT_CENTER)
+	spotlight_container.add_child(spotlight_phase)
 	spotlight_portrait = PortraitViewScript.new()
 	spotlight_portrait.position = Vector2(12.0, 34.0)
-	spotlight_portrait.size = Vector2(246.0, 212.0)
+	spotlight_portrait.size = Vector2(246.0, 188.0)
 	spotlight_container.add_child(spotlight_portrait)
-	spotlight_title = _make_label("", Vector2(16.0, 246.0), 22, Color(1.0, 0.92, 0.72), 238.0, HORIZONTAL_ALIGNMENT_CENTER)
+	spotlight_title = _make_label("", Vector2(16.0, 226.0), 22, Color(1.0, 0.92, 0.72), 238.0, HORIZONTAL_ALIGNMENT_CENTER)
 	spotlight_container.add_child(spotlight_title)
-	spotlight_subtitle = _make_label("", Vector2(16.0, 276.0), 16, Color(0.72, 0.92, 1.0), 238.0, HORIZONTAL_ALIGNMENT_CENTER)
+	spotlight_subtitle = _make_label("", Vector2(16.0, 256.0), 16, Color(0.72, 0.92, 1.0), 238.0, HORIZONTAL_ALIGNMENT_CENTER)
 	spotlight_container.add_child(spotlight_subtitle)
+	spotlight_quote = _make_label("", Vector2(18.0, 286.0), 14, Color(0.94, 0.96, 1.0), 234.0, HORIZONTAL_ALIGNMENT_CENTER)
+	spotlight_quote.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	spotlight_quote.size.y = 44.0
+	spotlight_container.add_child(spotlight_quote)
 
 	flash_rect = ColorRect.new()
 	flash_rect.set_anchors_preset(Control.PRESET_FULL_RECT)
@@ -441,16 +454,29 @@ func end_dialogue() -> void:
 	dialogue_text.text = ""
 
 func show_boss_spotlight(config: Dictionary, duration := 2.4) -> void:
+	var accent: Color = config.get("accent_color", Color(1.0, 0.72, 0.5))
+	var secondary: Color = config.get("secondary_color", Color(0.56, 0.92, 1.0))
+	var portrait_side: String = str(config.get("portrait_side", "right"))
 	spotlight_container.visible = true
 	spotlight_container.modulate.a = 0.0
+	spotlight_container.position = Vector2(36.0, 120.0) if portrait_side == "left" else Vector2(316.0, 120.0)
 	spotlight_duration = duration
 	spotlight_timer = duration
+	spotlight_phase.text = str(config.get("phase_name", ""))
+	spotlight_phase.visible = spotlight_phase.text != ""
+	spotlight_phase.add_theme_color_override("font_color", ColorFx.alpha(accent.lightened(0.18), 0.96))
 	spotlight_title.text = str(config.get("name", "Boss"))
+	spotlight_title.add_theme_color_override("font_color", ColorFx.alpha(accent.lightened(0.28), 0.98))
 	spotlight_subtitle.text = str(config.get("subtitle", ""))
+	spotlight_subtitle.add_theme_color_override("font_color", ColorFx.alpha(secondary.lightened(0.08), 0.94))
+	spotlight_quote.text = str(config.get("quote", ""))
+	spotlight_quote.visible = spotlight_quote.text != ""
+	spotlight_quote.add_theme_color_override("font_color", ColorFx.alpha(Color(0.94, 0.96, 1.0), 0.92))
 	spotlight_portrait.configure({
-		"accent_color": config.get("accent_color", Color(1.0, 0.72, 0.5)),
-		"secondary_color": config.get("secondary_color", Color(0.56, 0.92, 1.0)),
-		"side": config.get("portrait_side", "right"),
+		"accent_color": accent,
+		"secondary_color": secondary,
+		"side": portrait_side,
 		"mood": config.get("mood", "calm"),
-		"motif": config.get("motif", "ribbon")
+		"motif": config.get("motif", "ribbon"),
+		"title": spotlight_title.text
 	})

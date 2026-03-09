@@ -163,27 +163,48 @@ func defeat() -> void:
 func is_targetable() -> bool:
 	return not dead and intro_timer <= 0.0 and transition_timer <= 0.0
 
+func _difficulty_config() -> Dictionary:
+	if game and game.has_method("get_difficulty_config"):
+		return game.get_difficulty_config()
+	return {}
+
+func _difficulty_density() -> int:
+	return int(_difficulty_config().get("boss_density", 0))
+
+func _bullet_speed(base_speed: float) -> float:
+	return base_speed * float(_difficulty_config().get("boss_bullet_speed", 1.0))
+
+func _fire_interval(base_interval: float) -> float:
+	return max(0.06, base_interval * float(_difficulty_config().get("boss_fire_interval", 1.0)))
+
+func _count(base_count: int, step := 2, minimum := 1) -> int:
+	return max(minimum, base_count + _difficulty_density() * step)
+
+func _lane_count(base_count: int, minimum := 1) -> int:
+	return max(minimum, base_count + _difficulty_density())
+
 func _pattern_scarlet_spiral(delta: float) -> void:
 	shoot_a -= delta
 	shoot_b -= delta
 	pattern_angle += delta * 1.5
 	if shoot_a <= 0.0:
-		shoot_a = 0.11
-		game.spawn_radial_burst(global_position, 10, 155.0, pattern_angle, &"enemy", {
+		shoot_a = _fire_interval(0.11)
+		var ring_count: int = _count(10, 2, 6)
+		game.spawn_radial_burst(global_position, ring_count, _bullet_speed(155.0), pattern_angle, &"enemy", {
 			"shape": &"orb",
 			"color": Color(1.0, 0.42, 0.68),
 			"radius": 6.6
 		})
-		game.spawn_radial_burst(global_position, 10, 225.0, pattern_angle + PI / 10.0, &"enemy", {
+		game.spawn_radial_burst(global_position, ring_count, _bullet_speed(225.0), pattern_angle + PI / float(max(1, ring_count)), &"enemy", {
 			"shape": &"diamond",
 			"color": Color(1.0, 0.84, 0.46),
 			"radius": 5.6,
 			"rotation_speed": 1.2
 		})
 	if shoot_b <= 0.0:
-		shoot_b = 1.2
+		shoot_b = _fire_interval(1.2)
 		var aim_angle: float = game.angle_to_player(global_position)
-		game.spawn_fan(global_position, aim_angle, 7, 56.0, 240.0, &"enemy", {
+		game.spawn_fan(global_position, aim_angle, _count(7, 2, 3), 56.0, _bullet_speed(240.0), &"enemy", {
 			"shape": &"needle",
 			"color": Color(0.96, 0.96, 1.0),
 			"radius": 5.2
@@ -193,12 +214,12 @@ func _pattern_moon_petals(delta: float) -> void:
 	shoot_a -= delta
 	shoot_b -= delta
 	if shoot_a <= 0.0:
-		shoot_a = 0.16
+		shoot_a = _fire_interval(0.16)
 		for side_value in [-1.0, 1.0]:
 			var side: float = float(side_value)
 			var emitter: Vector2 = global_position + Vector2(cos(orbit_angle + side * PI * 0.45), sin(orbit_angle + side * PI * 0.45)) * 54.0
 			var fan_angle: float = game.angle_to_player(emitter) + side * deg_to_rad(22.0)
-			game.spawn_fan(emitter, fan_angle, 5, 50.0, 145.0, &"enemy", {
+			game.spawn_fan(emitter, fan_angle, _count(5, 2, 3), 50.0, _bullet_speed(145.0), &"enemy", {
 				"shape": &"petal",
 				"color": Color(0.58, 0.96, 1.0),
 				"radius": 6.6,
@@ -209,8 +230,8 @@ func _pattern_moon_petals(delta: float) -> void:
 				"wave_phase": side * 0.6
 			})
 	if shoot_b <= 0.0:
-		shoot_b = 1.28
-		game.spawn_radial_burst(global_position, 18, 175.0, orbit_angle * 0.7, &"enemy", {
+		shoot_b = _fire_interval(1.28)
+		game.spawn_radial_burst(global_position, _count(18, 2, 10), _bullet_speed(175.0), orbit_angle * 0.7, &"enemy", {
 			"shape": &"diamond",
 			"color": Color(0.88, 0.66, 1.0),
 			"radius": 5.7,
@@ -221,27 +242,30 @@ func _pattern_prism_cascade(delta: float) -> void:
 	shoot_a -= delta
 	shoot_b -= delta
 	if shoot_a <= 0.0:
-		shoot_a = 0.24
+		shoot_a = _fire_interval(0.24)
 		alt_toggle = not alt_toggle
 		var side_x: float = game.playfield_rect.position.x + 16.0
 		if not alt_toggle:
 			side_x = game.playfield_rect.position.x + game.playfield_rect.size.x - 16.0
-		for stream_index in range(6):
+		var stream_count: int = _lane_count(6, 4)
+		var lane_span: float = game.playfield_rect.size.x - 140.0
+		var lane_step: float = lane_span / float(max(1, stream_count - 1))
+		for stream_index in range(stream_count):
 			var origin := Vector2(side_x, game.playfield_rect.position.y + 48.0 + float(stream_index) * 28.0)
 			var target := Vector2(
-				game.playfield_rect.position.x + 90.0 + float(stream_index) * 62.0,
+				game.playfield_rect.position.x + 70.0 + float(stream_index) * lane_step,
 				game.playfield_rect.position.y + game.playfield_rect.size.y + 32.0
 			)
-			var direction: Vector2 = (target - origin).normalized() * 240.0
+			var direction: Vector2 = (target - origin).normalized() * _bullet_speed(240.0)
 			game.spawn_enemy_bullet(origin, direction, {
 				"shape": &"needle",
 				"color": Color(0.66, 0.74, 1.0),
 				"radius": 5.0
 			})
 	if shoot_b <= 0.0:
-		shoot_b = 0.95
+		shoot_b = _fire_interval(0.95)
 		var aim_angle: float = game.angle_to_player(global_position)
-		game.spawn_fan(global_position, aim_angle, 9, 72.0, 230.0, &"enemy", {
+		game.spawn_fan(global_position, aim_angle, _count(9, 2, 5), 72.0, _bullet_speed(230.0), &"enemy", {
 			"shape": &"star",
 			"color": Color(0.9, 0.68, 1.0),
 			"radius": 5.0,
@@ -254,14 +278,15 @@ func _pattern_falling_star(delta: float) -> void:
 	shoot_c -= delta
 	pattern_angle += delta * 1.85
 	if shoot_a <= 0.0:
-		shoot_a = 0.12
-		game.spawn_radial_burst(global_position, 12, 205.0, pattern_angle, &"enemy", {
+		shoot_a = _fire_interval(0.12)
+		var burst_count: int = _count(12, 2, 8)
+		game.spawn_radial_burst(global_position, burst_count, _bullet_speed(205.0), pattern_angle, &"enemy", {
 			"shape": &"star",
 			"color": Color(1.0, 0.84, 0.48),
 			"radius": 5.2,
 			"rotation_speed": 3.0
 		})
-		game.spawn_radial_burst(global_position, 12, 140.0, pattern_angle + PI / 12.0, &"enemy", {
+		game.spawn_radial_burst(global_position, burst_count, _bullet_speed(140.0), pattern_angle + PI / float(max(1, burst_count)), &"enemy", {
 			"shape": &"orb",
 			"color": Color(1.0, 0.42, 0.72),
 			"radius": 6.3,
@@ -269,20 +294,22 @@ func _pattern_falling_star(delta: float) -> void:
 			"accel": 110.0
 		})
 	if shoot_b <= 0.0:
-		shoot_b = 0.72
+		shoot_b = _fire_interval(0.72)
 		var aim_angle: float = game.angle_to_player(global_position)
-		game.spawn_fan(global_position, aim_angle, 11, 88.0, 260.0, &"enemy", {
+		game.spawn_fan(global_position, aim_angle, _count(11, 2, 5), 88.0, _bullet_speed(260.0), &"enemy", {
 			"shape": &"needle",
 			"color": Color(0.94, 0.95, 1.0),
 			"radius": 5.1
 		})
 	if shoot_c <= 0.0:
-		shoot_c = 0.34
+		shoot_c = _fire_interval(0.34)
+		var side_rows: int = _lane_count(3, 2)
 		for side_x in [game.playfield_rect.position.x + 24.0, game.playfield_rect.position.x + game.playfield_rect.size.x - 24.0]:
-			for offset in range(3):
+			for offset in range(side_rows):
+				var center_offset: float = float(offset) - float(side_rows - 1) * 0.5
 				var origin := Vector2(side_x, game.playfield_rect.position.y + 76.0 + float(offset) * 40.0)
-				var target_angle: float = game.angle_to_player(origin) + deg_to_rad((float(offset) - 1.0) * 10.0)
-				game.spawn_enemy_bullet(origin, Vector2.RIGHT.rotated(target_angle) * 225.0, {
+				var target_angle: float = game.angle_to_player(origin) + deg_to_rad(center_offset * 10.0)
+				game.spawn_enemy_bullet(origin, Vector2.RIGHT.rotated(target_angle) * _bullet_speed(225.0), {
 					"shape": &"petal",
 					"color": Color(0.58, 0.94, 1.0),
 					"radius": 5.7,
@@ -296,12 +323,12 @@ func _pattern_magnetic_bloom(delta: float) -> void:
 	shoot_b -= delta
 	pattern_angle += delta * 1.2
 	if shoot_a <= 0.0:
-		shoot_a = 0.22
+		shoot_a = _fire_interval(0.22)
 		alt_toggle = not alt_toggle
 		var lateral: float = -64.0 if alt_toggle else 64.0
 		var emitter: Vector2 = global_position + Vector2(lateral, sin(phase_time * 3.0) * 18.0)
 		var aim_angle: float = game.angle_to_player(emitter) + (0.24 if alt_toggle else -0.24)
-		game.spawn_fan(emitter, aim_angle, 6, 64.0, 165.0, &"enemy", {
+		game.spawn_fan(emitter, aim_angle, _count(6, 2, 4), 64.0, _bullet_speed(165.0), &"enemy", {
 			"shape": &"petal",
 			"color": Color(1.0, 0.66, 0.42),
 			"radius": 6.1,
@@ -310,14 +337,15 @@ func _pattern_magnetic_bloom(delta: float) -> void:
 			"wave_phase": lateral * 0.03
 		})
 	if shoot_b <= 0.0:
-		shoot_b = 0.88
-		game.spawn_radial_burst(global_position, 14, 155.0, pattern_angle, &"enemy", {
+		shoot_b = _fire_interval(0.88)
+		var ring_count: int = _count(14, 2, 8)
+		game.spawn_radial_burst(global_position, ring_count, _bullet_speed(155.0), pattern_angle, &"enemy", {
 			"shape": &"diamond",
 			"color": Color(0.54, 0.95, 1.0),
 			"radius": 5.2,
 			"rotation_speed": 1.0
 		})
-		game.spawn_radial_burst(global_position, 14, 220.0, pattern_angle + PI / 14.0, &"enemy", {
+		game.spawn_radial_burst(global_position, ring_count, _bullet_speed(220.0), pattern_angle + PI / float(max(1, ring_count)), &"enemy", {
 			"shape": &"needle",
 			"color": Color(1.0, 0.84, 0.48),
 			"radius": 4.8
@@ -328,23 +356,26 @@ func _pattern_aurora_lattice(delta: float) -> void:
 	shoot_b -= delta
 	shoot_c -= delta
 	if shoot_a <= 0.0:
-		shoot_a = 0.18
-		for orbit_index in range(3):
-			var orbit_phase: float = orbit_angle + float(orbit_index) * TAU / 3.0
+		shoot_a = _fire_interval(0.18)
+		var orbit_emitters: int = _lane_count(3, 2)
+		for orbit_index in range(orbit_emitters):
+			var orbit_phase: float = orbit_angle + float(orbit_index) * TAU / float(max(1, orbit_emitters))
 			var emitter: Vector2 = global_position + Vector2(cos(orbit_phase), sin(orbit_phase)) * 60.0
-			game.spawn_enemy_bullet(emitter, Vector2.DOWN.rotated(sin(orbit_phase) * 0.16) * 200.0, {
+			game.spawn_enemy_bullet(emitter, Vector2.DOWN.rotated(sin(orbit_phase) * 0.16) * _bullet_speed(200.0), {
 				"shape": &"needle",
 				"color": Color(0.54, 0.95, 1.0),
 				"radius": 5.0,
 				"turn_rate": cos(orbit_phase) * 0.08
 			})
 	if shoot_b <= 0.0:
-		shoot_b = 0.94
+		shoot_b = _fire_interval(0.94)
+		var wall_rows: int = _lane_count(4, 2)
 		for side_x in [game.playfield_rect.position.x + 18.0, game.playfield_rect.position.x + game.playfield_rect.size.x - 18.0]:
-			for row in range(4):
+			for row in range(wall_rows):
+				var center_row: float = float(row) - float(wall_rows - 1) * 0.5
 				var origin := Vector2(side_x, game.playfield_rect.position.y + 70.0 + float(row) * 42.0)
-				var target_angle: float = game.angle_to_player(origin) + deg_to_rad((float(row) - 1.5) * 8.0)
-				game.spawn_enemy_bullet(origin, Vector2.RIGHT.rotated(target_angle) * 210.0, {
+				var target_angle: float = game.angle_to_player(origin) + deg_to_rad(center_row * 8.0)
+				game.spawn_enemy_bullet(origin, Vector2.RIGHT.rotated(target_angle) * _bullet_speed(210.0), {
 					"shape": &"diamond",
 					"color": Color(0.84, 0.58, 1.0),
 					"radius": 5.3,
@@ -353,9 +384,9 @@ func _pattern_aurora_lattice(delta: float) -> void:
 					"wave_phase": float(row) * 0.7
 				})
 	if shoot_c <= 0.0:
-		shoot_c = 1.35
+		shoot_c = _fire_interval(1.35)
 		var aim_angle: float = game.angle_to_player(global_position)
-		game.spawn_fan(global_position, aim_angle, 10, 96.0, 250.0, &"enemy", {
+		game.spawn_fan(global_position, aim_angle, _count(10, 2, 6), 96.0, _bullet_speed(250.0), &"enemy", {
 			"shape": &"star",
 			"color": Color(1.0, 0.82, 0.46),
 			"radius": 4.8,
@@ -366,11 +397,13 @@ func _pattern_comet_refinery(delta: float) -> void:
 	shoot_a -= delta
 	shoot_b -= delta
 	if shoot_a <= 0.0:
-		shoot_a = 0.24
-		for lane in range(6):
-			var x: float = game.playfield_rect.position.x + 50.0 + float(lane) * 90.0 + sin(phase_time * 2.0 + float(lane)) * 18.0
+		shoot_a = _fire_interval(0.24)
+		var lane_count: int = _lane_count(6, 4)
+		var lane_step: float = (game.playfield_rect.size.x - 100.0) / float(max(1, lane_count - 1))
+		for lane in range(lane_count):
+			var x: float = game.playfield_rect.position.x + 50.0 + float(lane) * lane_step + sin(phase_time * 2.0 + float(lane)) * 18.0
 			var origin := Vector2(x, game.playfield_rect.position.y - 16.0)
-			game.spawn_enemy_bullet(origin, Vector2(0.0, 160.0 + float(lane) * 10.0), {
+			game.spawn_enemy_bullet(origin, Vector2(0.0, _bullet_speed(160.0 + float(lane) * 10.0)), {
 				"shape": &"star",
 				"color": Color(1.0, 0.76, 0.46),
 				"radius": 4.8,
@@ -379,21 +412,22 @@ func _pattern_comet_refinery(delta: float) -> void:
 				"rotation_speed": 2.5
 			})
 	if shoot_b <= 0.0:
-		shoot_b = 0.82
+		shoot_b = _fire_interval(0.82)
 		var aim_angle: float = game.angle_to_player(global_position)
-		game.spawn_fan(global_position, aim_angle, 9, 74.0, 240.0, &"enemy", {
+		var ring_count: int = _count(10, 2, 6)
+		game.spawn_fan(global_position, aim_angle, _count(9, 2, 5), 74.0, _bullet_speed(240.0), &"enemy", {
 			"shape": &"needle",
 			"color": Color(0.94, 0.96, 1.0),
 			"radius": 5.0
 		})
-		game.spawn_radial_burst(global_position, 10, 138.0, pattern_angle, &"enemy", {
+		game.spawn_radial_burst(global_position, ring_count, _bullet_speed(138.0), pattern_angle, &"enemy", {
 			"shape": &"orb",
 			"color": Color(0.88, 0.58, 1.0),
 			"radius": 6.0,
 			"accel_after": 0.9,
 			"accel": 90.0
 		})
-		pattern_angle += PI / 10.0
+		pattern_angle += PI / float(max(1, ring_count))
 
 func _pattern_boundary_collapse(delta: float) -> void:
 	shoot_a -= delta
@@ -401,14 +435,15 @@ func _pattern_boundary_collapse(delta: float) -> void:
 	shoot_c -= delta
 	pattern_angle += delta * 2.0
 	if shoot_a <= 0.0:
-		shoot_a = 0.1
-		game.spawn_radial_burst(global_position, 16, 210.0, pattern_angle, &"enemy", {
+		shoot_a = _fire_interval(0.1)
+		var burst_count: int = _count(16, 2, 10)
+		game.spawn_radial_burst(global_position, burst_count, _bullet_speed(210.0), pattern_angle, &"enemy", {
 			"shape": &"star",
 			"color": Color(1.0, 0.84, 0.48),
 			"radius": 5.0,
 			"rotation_speed": 3.0
 		})
-		game.spawn_radial_burst(global_position, 16, 132.0, pattern_angle + PI / 16.0, &"enemy", {
+		game.spawn_radial_burst(global_position, burst_count, _bullet_speed(132.0), pattern_angle + PI / float(max(1, burst_count)), &"enemy", {
 			"shape": &"orb",
 			"color": Color(0.52, 0.95, 1.0),
 			"radius": 6.2,
@@ -416,13 +451,15 @@ func _pattern_boundary_collapse(delta: float) -> void:
 			"accel": 115.0
 		})
 	if shoot_b <= 0.0:
-		shoot_b = 0.44
+		shoot_b = _fire_interval(0.44)
+		var wall_rows: int = _lane_count(4, 3)
 		for side_x in [game.playfield_rect.position.x + 20.0, game.playfield_rect.position.x + game.playfield_rect.size.x - 20.0]:
-			for row in range(4):
+			for row in range(wall_rows):
+				var center_row: float = float(row) - float(wall_rows - 1) * 0.5
 				var origin := Vector2(side_x, game.playfield_rect.position.y + 62.0 + float(row) * 44.0)
-				var angle_offset: float = deg_to_rad((float(row) - 1.5) * 6.0)
+				var angle_offset: float = deg_to_rad(center_row * 6.0)
 				var target_angle: float = game.angle_to_player(origin) + angle_offset
-				game.spawn_enemy_bullet(origin, Vector2.RIGHT.rotated(target_angle) * 235.0, {
+				game.spawn_enemy_bullet(origin, Vector2.RIGHT.rotated(target_angle) * _bullet_speed(235.0), {
 					"shape": &"petal",
 					"color": Color(1.0, 0.62, 0.46),
 					"radius": 5.8,
@@ -431,9 +468,9 @@ func _pattern_boundary_collapse(delta: float) -> void:
 					"wave_phase": float(row)
 				})
 	if shoot_c <= 0.0:
-		shoot_c = 0.9
+		shoot_c = _fire_interval(0.9)
 		var aim_angle: float = game.angle_to_player(global_position)
-		game.spawn_fan(global_position, aim_angle, 13, 102.0, 268.0, &"enemy", {
+		game.spawn_fan(global_position, aim_angle, _count(13, 2, 7), 102.0, _bullet_speed(268.0), &"enemy", {
 			"shape": &"needle",
 			"color": Color(0.96, 0.98, 1.0),
 			"radius": 4.9

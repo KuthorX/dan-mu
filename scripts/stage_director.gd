@@ -72,7 +72,7 @@ func _build_stage_one() -> void:
 	stage_subtitle = "穿过霓虹星海的试炼"
 	accent_color = Color(0.54, 0.92, 1.0)
 	boss_config = {
-		"name": "Boundary Watcher · Aster",
+		"name": "Boundary Watcher · 星界秘主",
 		"subtitle": "星界边缘的守望者",
 		"radius": 34.0,
 		"accent_color": Color(1.0, 0.84, 0.54),
@@ -81,10 +81,10 @@ func _build_stage_one() -> void:
 		"mood": "calm",
 		"motif": "halo",
 		"phases": [
-			{"name": "Nonspell · Scarlet Spiral", "hp": 420.0, "color": Color(1.0, 0.45, 0.68), "bonus": 40000, "pattern": &"scarlet_spiral"},
-			{"name": "Spell · Moon Petal Cage", "hp": 560.0, "color": Color(0.58, 0.95, 1.0), "bonus": 70000, "pattern": &"moon_petals"},
-			{"name": "Spell · Prism Cascade", "hp": 700.0, "color": Color(0.76, 0.62, 1.0), "bonus": 100000, "pattern": &"prism_cascade"},
-			{"name": "Last Spell · Falling Star Border", "hp": 860.0, "color": Color(1.0, 0.88, 0.46), "bonus": 150000, "pattern": &"falling_star"}
+			{"name": "Nonspell · Scarlet Spiral", "hp": 420.0, "color": Color(1.0, 0.45, 0.68), "bonus": 40000, "pattern": &"scarlet_spiral", "subtitle": "试探性的星屑螺旋", "mood": "calm", "motif": "halo", "quote": "先试着跟上我的星轨吧。"},
+			{"name": "Spell · Moon Petal Cage", "hp": 560.0, "color": Color(0.58, 0.95, 1.0), "bonus": 70000, "pattern": &"moon_petals", "subtitle": "月瓣收束的包围阵", "mood": "soft", "motif": "ribbon", "quote": "月色会替我关上退路。"},
+			{"name": "Spell · Prism Cascade", "hp": 700.0, "color": Color(0.76, 0.62, 1.0), "bonus": 100000, "pattern": &"prism_cascade", "subtitle": "折射层层堆叠的星雨", "mood": "soft", "motif": "crown", "quote": "每一道折光，都会成为新的边界。"},
+			{"name": "Last Spell · Falling Star Border", "hp": 860.0, "color": Color(1.0, 0.88, 0.46), "bonus": 150000, "pattern": &"falling_star", "subtitle": "坠星边界的最终压制", "mood": "angry", "motif": "crown", "quote": "把你的退路与天穹一起压碎。"}
 		]
 	}
 	_push_banner(0.3, stage_title, stage_subtitle)
@@ -292,9 +292,9 @@ func _build_stage_one() -> void:
 			"right": {"accent_color": boss_config["accent_color"], "secondary_color": boss_config["secondary_color"], "side": "right", "mood": boss_config["mood"], "motif": boss_config["motif"]}
 		},
 		"lines": [
-			{"speaker": "洛天依", "side": "left", "speaker_color": Color(1.0, 0.88, 0.72), "text": "这片边界的星光有点太吵了……你就是在操纵这场弹幕的人？"},
-			{"speaker": "Aster", "side": "right", "speaker_color": boss_config["accent_color"], "text": "访客啊，若想穿过星界边缘，就用你的轨迹证明自己。"},
-			{"speaker": "洛天依", "side": "left", "speaker_color": Color(1.0, 0.88, 0.72), "text": "那我就不客气了。先把你的符卡拆开，再去下一层。"}
+			{"speaker": "洛天依", "side": "left", "speaker_color": Color(1.0, 0.88, 0.72), "portrait_update": {"mood": "calm", "motif": "ribbon"}, "text": "这片边界的星光有点太吵了……你就是在操纵这场弹幕的人？"},
+			{"speaker": "星界秘主", "side": "right", "speaker_color": boss_config["accent_color"], "portrait_update": {"mood": "soft", "motif": "halo"}, "text": "访客啊，若想穿过星界边缘，就用你的轨迹证明自己。"},
+			{"speaker": "洛天依", "side": "left", "speaker_color": Color(1.0, 0.88, 0.72), "portrait_update": {"mood": "angry", "motif": "ribbon"}, "text": "那我就不客气了。先把你的符卡拆开，再去下一层。"}
 		]
 	})
 	_push_banner(46.4, "Boss Approaching", boss_config["name"])
@@ -305,7 +305,7 @@ func _build_stage_two() -> void:
 	stage_subtitle = "穿行熔色极光与磁暴回廊"
 	accent_color = Color(1.0, 0.68, 0.42)
 	boss_config = {
-		"name": "Forge Warden · Kagari",
+		"name": "Forge Warden · 炼狱魔王",
 		"subtitle": "磁暴边界的熔炉守卫",
 		"radius": 38.0,
 		"accent_color": Color(1.0, 0.74, 0.42),
@@ -314,10 +314,10 @@ func _build_stage_two() -> void:
 		"mood": "angry",
 		"motif": "gear",
 		"phases": [
-			{"name": "Nonspell · Magnetic Bloom", "hp": 540.0, "color": Color(1.0, 0.64, 0.42), "bonus": 70000, "pattern": &"magnetic_bloom"},
-			{"name": "Spell · Aurora Lattice", "hp": 720.0, "color": Color(0.48, 0.94, 1.0), "bonus": 110000, "pattern": &"aurora_lattice"},
-			{"name": "Spell · Comet Refinery", "hp": 880.0, "color": Color(0.86, 0.56, 1.0), "bonus": 150000, "pattern": &"comet_refinery"},
-			{"name": "Last Spell · Boundary Collapse Furnace", "hp": 1080.0, "color": Color(1.0, 0.88, 0.52), "bonus": 220000, "pattern": &"boundary_collapse"}
+			{"name": "Nonspell · Magnetic Bloom", "hp": 540.0, "color": Color(1.0, 0.64, 0.42), "bonus": 70000, "pattern": &"magnetic_bloom", "subtitle": "磁化花阵的压迫试探", "mood": "angry", "motif": "gear", "quote": "炉心才刚刚升温。"},
+			{"name": "Spell · Aurora Lattice", "hp": 720.0, "color": Color(0.48, 0.94, 1.0), "bonus": 110000, "pattern": &"aurora_lattice", "subtitle": "极光格构封锁回廊", "mood": "calm", "motif": "halo", "quote": "极光会把你的每一步都记录下来。"},
+			{"name": "Spell · Comet Refinery", "hp": 880.0, "color": Color(0.86, 0.56, 1.0), "bonus": 150000, "pattern": &"comet_refinery", "subtitle": "彗星熔炼的高速压线", "mood": "angry", "motif": "gear", "quote": "把星火压进熔炉，再让它们全部向你倾倒。"},
+			{"name": "Last Spell · Boundary Collapse Furnace", "hp": 1080.0, "color": Color(1.0, 0.88, 0.52), "bonus": 220000, "pattern": &"boundary_collapse", "subtitle": "边界坍缩前的最终熔断", "mood": "angry", "motif": "crown", "quote": "边界一旦塌陷，就连回旋的余地也不会留下。"}
 		]
 	}
 	_push_banner(0.3, stage_title, stage_subtitle)
@@ -508,9 +508,9 @@ func _build_stage_two() -> void:
 			"right": {"accent_color": boss_config["accent_color"], "secondary_color": boss_config["secondary_color"], "side": "right", "mood": boss_config["mood"], "motif": boss_config["motif"]}
 		},
 		"lines": [
-			{"speaker": "洛天依", "side": "left", "speaker_color": Color(1.0, 0.88, 0.72), "text": "极光后面居然是熔炉……难怪第二关的弹幕这么烫。"},
-			{"speaker": "Kagari", "side": "right", "speaker_color": boss_config["accent_color"], "text": "能走到这里，已经值得夸奖。但边界坍缩前，你一步也别想再往前。"},
-			{"speaker": "洛天依", "side": "left", "speaker_color": Color(1.0, 0.88, 0.72), "text": "那就看看是你的炉火更凶，还是我的避弹线更稳。"}
+			{"speaker": "洛天依", "side": "left", "speaker_color": Color(1.0, 0.88, 0.72), "portrait_update": {"mood": "soft", "motif": "ribbon"}, "text": "极光后面居然是熔炉……难怪第二关的弹幕这么烫。"},
+			{"speaker": "炼狱魔王", "side": "right", "speaker_color": boss_config["accent_color"], "portrait_update": {"mood": "angry", "motif": "gear"}, "text": "能走到这里，已经值得夸奖。但边界坍缩前，你一步也别想再往前。"},
+			{"speaker": "洛天依", "side": "left", "speaker_color": Color(1.0, 0.88, 0.72), "portrait_update": {"mood": "angry", "motif": "ribbon"}, "text": "那就看看是你的炉火更凶，还是我的避弹线更稳。"}
 		]
 	})
 	_push_banner(46.2, "Boss Approaching", boss_config["name"])
