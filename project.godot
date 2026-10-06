@@ -11,6 +11,10 @@ config_version=5
 [application]
 
 config/name="DanMu"
+config/name_localized={
+"en": "DanMu: Border Fantasy",
+"zh": "弹幕 · 边界幻想"
+}
 run/main_scene="res://scenes/main.tscn"
 config/features=PackedStringArray("4.6", "Forward Plus")
 config/icon="res://icon.svg"
@@ -32,4 +36,5 @@ locale/fallback="en"
 
 [rendering]
 
+environment/defaults/default_clear_color=Color(0.075, 0.03, 0.028, 1)
 rendering_device/driver.windows="d3d12"

@@ -1,6 +1,9 @@
 extends Node2D
 
 const ColorFx = preload("res://scripts/color_fx.gd")
+const KEYLINE := Color(0.02, 0.01, 0.03, 0.9)
+const PAPER := Color(0.93, 0.89, 0.80)
+const SEAL_RED := Color(0.85, 0.25, 0.17)
 
 var game = null
 var custom_name := "fairy"
@@ -321,17 +324,28 @@ func _draw() -> void:
 			body_color = Color(1.0, 0.64, 0.58)
 	if flash_timer > 0.0:
 		body_color = Color.WHITE
-	var wing: float = 8.0 + sin(age * 6.0 + wobble) * 1.8
+	# a shikigami: a paper talisman bound to a coloured spirit, drawn with an ink keyline
+	var sway: float = sin(age * 4.0 + wobble) * 0.18
+	var tag := Rect2(Vector2(-radius * 0.28, radius * 0.25), Vector2(radius * 0.56, radius * 1.15))
+	draw_set_transform(Vector2.ZERO, sway, Vector2.ONE)
+	draw_rect(tag.grow(1.5), KEYLINE, true)
+	draw_rect(tag, PAPER, true)
+	draw_line(tag.position + Vector2(tag.size.x * 0.5, 3.0), tag.end - Vector2(tag.size.x * 0.5, 3.0), SEAL_RED, 2.0)
+	draw_set_transform(Vector2.ZERO, 0.0, Vector2.ONE)
+	var wing: float = radius * (0.95 + sin(age * 6.0 + wobble) * 0.08)
 	var hull := PackedVector2Array([
 		Vector2(0.0, -radius * 0.95),
-		Vector2(radius * 0.75, -radius * 0.15),
-		Vector2(radius * 0.45, radius * 0.9),
-		Vector2(0.0, radius * 0.45),
-		Vector2(-radius * 0.45, radius * 0.9),
-		Vector2(-radius * 0.75, -radius * 0.15)
+		Vector2(wing * 0.8, -radius * 0.2),
+		Vector2(radius * 0.45, radius * 0.55),
+		Vector2(0.0, radius * 0.35),
+		Vector2(-radius * 0.45, radius * 0.55),
+		Vector2(-wing * 0.8, -radius * 0.2)
 	])
-	draw_colored_polygon(hull, ColorFx.alpha(body_color, 0.95))
-	draw_circle(Vector2.ZERO, radius * 0.28, ColorFx.alpha(Color.WHITE, 0.92))
-	draw_line(Vector2(-wing, 2.0), Vector2(wing, 2.0), ColorFx.alpha(body_color.lightened(0.15), 0.85), 2.0, true)
+	var outline: Array = Geometry2D.offset_polygon(hull, 2.0)
+	if not outline.is_empty():
+		draw_colored_polygon(outline[0], KEYLINE)
+	draw_colored_polygon(hull, body_color)
+	draw_circle(Vector2(0.0, -radius * 0.18), radius * 0.24, KEYLINE)
+	draw_circle(Vector2(0.0, -radius * 0.18), radius * 0.15, PAPER)
 	if custom_name == "guardian":
-		draw_arc(Vector2.ZERO, radius * 0.86, 0.0, TAU, 32, ColorFx.alpha(body_color, 0.4), 2.0, true)
+		draw_arc(Vector2.ZERO, radius * 1.05, 0.0, TAU, 32, ColorFx.alpha(body_color, 0.55), 2.0, true)

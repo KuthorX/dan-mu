@@ -3,6 +3,8 @@ extends Node2D
 signal bomb_requested
 
 const OPTION_COUNT_BY_TIER := [2, 2, 4, 4, 6, 6, 8, 8]
+const KEYLINE := Color(0.02, 0.01, 0.03, 0.9)
+const SEAL_RED := Color(0.85, 0.25, 0.17)
 
 var game = null
 var ship_key := "spirit"
@@ -375,45 +377,44 @@ func _draw() -> void:
 	if hit_flash > 0.0:
 		ship_color = Color(1.0, 0.55, 0.72, 1.0)
 		ship_core = Color(1.0, 0.86, 0.94, 1.0)
+	var keyline := Color(KEYLINE.r, KEYLINE.g, KEYLINE.b, KEYLINE.a * blink_alpha)
+	# options are small vermilion seals with a paper eye, the shrine's familiars
 	for option_position in _get_option_positions(game.get_power_tier()):
-		draw_circle(option_position, 6.0, Color(ship_core.r, ship_core.g, ship_core.b, 0.16 + 0.18 * blink_alpha))
-		draw_circle(option_position, 3.2, Color(1.0, 1.0, 1.0, 0.92 * blink_alpha))
-	var hull := PackedVector2Array()
-	match ship_key:
-		"gale":
-			hull = PackedVector2Array([
-				Vector2(0.0, -15.0),
-				Vector2(13.0, 6.0),
-				Vector2(6.0, 9.0),
-				Vector2(0.0, 3.0),
-				Vector2(-6.0, 9.0),
-				Vector2(-13.0, 6.0)
-			])
-		"lance":
-			hull = PackedVector2Array([
-				Vector2(0.0, -16.0),
-				Vector2(8.0, 2.0),
-				Vector2(5.0, 12.0),
-				Vector2(0.0, 6.0),
-				Vector2(-5.0, 12.0),
-				Vector2(-8.0, 2.0)
-			])
-		_:
-			var wing_flare: float = 2.0 + sin(animation_time * 8.0) * 1.2
-			hull = PackedVector2Array([
-				Vector2(0.0, -14.0),
-				Vector2(10.0, 8.0 + wing_flare),
-				Vector2(0.0, 4.0),
-				Vector2(-10.0, 8.0 + wing_flare)
-			])
+		draw_rect(Rect2(option_position - Vector2(5.5, 5.5), Vector2(11.0, 11.0)), keyline, true)
+		draw_rect(Rect2(option_position - Vector2(4.0, 4.0), Vector2(8.0, 8.0)), Color(SEAL_RED.r, SEAL_RED.g, SEAL_RED.b, blink_alpha), true)
+		draw_rect(Rect2(option_position - Vector2(1.5, 1.5), Vector2(3.0, 3.0)), Color(1.0, 0.95, 0.86, blink_alpha), true)
+	var hull := _hull_points()
+	var outline: Array = Geometry2D.offset_polygon(hull, 2.0)
+	if not outline.is_empty():
+		draw_colored_polygon(outline[0], keyline)
 	draw_colored_polygon(hull, ship_color)
-	draw_circle(Vector2.ZERO, 5.1, Color(1.0, 1.0, 1.0, 0.92 * blink_alpha))
 	draw_circle(Vector2(0.0, 7.0), 3.2, ship_core)
 	if ship_key == "gale":
 		draw_line(Vector2(-15.0, 3.0), Vector2(15.0, 3.0), Color(primary_color.r, primary_color.g, primary_color.b, 0.58 * blink_alpha), 2.0, true)
 	elif ship_key == "lance":
 		draw_line(Vector2(0.0, -18.0), Vector2(0.0, 14.0), Color(secondary_color.r, secondary_color.g, secondary_color.b, 0.72 * blink_alpha), 2.2, true)
-	if focus_ratio > 0.05 or invuln_timer > 0.0:
-		draw_circle(Vector2.ZERO, graze_radius, Color(primary_color.r, primary_color.g, primary_color.b, 0.08 + focus_ratio * 0.05))
-		draw_circle(Vector2.ZERO, hitbox_radius + 1.6, Color(1.0, 1.0, 1.0, 0.22 + focus_ratio * 0.1))
-		draw_circle(Vector2.ZERO, hitbox_radius, Color(1.0, 0.3, 0.45, 0.92))
+	if focus_ratio > 0.05:
+		_draw_focus_marks()
+	else:
+		draw_circle(Vector2.ZERO, 4.2, Color(1.0, 1.0, 1.0, 0.92 * blink_alpha))
+
+func _hull_points() -> PackedVector2Array:
+	match ship_key:
+		"gale":
+			return PackedVector2Array([Vector2(0.0, -15.0), Vector2(13.0, 6.0), Vector2(6.0, 9.0), Vector2(0.0, 3.0), Vector2(-6.0, 9.0), Vector2(-13.0, 6.0)])
+		"lance":
+			return PackedVector2Array([Vector2(0.0, -16.0), Vector2(8.0, 2.0), Vector2(5.0, 12.0), Vector2(0.0, 6.0), Vector2(-5.0, 12.0), Vector2(-8.0, 2.0)])
+	var wing_flare: float = 2.0 + sin(animation_time * 8.0) * 1.2
+	return PackedVector2Array([Vector2(0.0, -14.0), Vector2(10.0, 8.0 + wing_flare), Vector2(0.0, 4.0), Vector2(-10.0, 8.0 + wing_flare)])
+
+## Focus shows the true hitbox as a white dot in a vermilion ring with an ink keyline,
+## plus a turning seal ring at graze distance. It is drawn last so nothing covers it.
+func _draw_focus_marks() -> void:
+	var ring_alpha: float = 0.45 * focus_ratio
+	var turn: float = animation_time * 1.6
+	for arc_index in range(3):
+		var start: float = turn + TAU * float(arc_index) / 3.0
+		draw_arc(Vector2.ZERO, graze_radius, start, start + TAU / 4.5, 12, Color(1.0, 0.95, 0.86, ring_alpha), 1.5, true)
+	draw_circle(Vector2.ZERO, hitbox_radius + 3.4, KEYLINE)
+	draw_circle(Vector2.ZERO, hitbox_radius + 2.0, SEAL_RED)
+	draw_circle(Vector2.ZERO, hitbox_radius, Color(1.0, 1.0, 1.0, 1.0))

@@ -11,6 +11,8 @@ const StageDirectorScript = preload("res://scripts/stage_director.gd")
 const EffectScript = preload("res://scripts/effect.gd")
 const AudioManagerScript = preload("res://scripts/audio_manager.gd")
 const I18n = preload("res://scripts/i18n.gd")
+const DebugHooksScript = preload("res://scripts/debug_hooks.gd")
+const ScreenFrameScript = preload("res://scripts/screen_frame.gd")
 
 enum GameState { MENU, DIALOGUE, REWARD, PLAYING, TRANSITION, PAUSED, GAME_OVER, VICTORY }
 
@@ -148,18 +150,33 @@ var pickups: Array = []
 func _ready() -> void:
 	randomize()
 	I18n.apply_saved_or_default()
-	if DisplayServer.get_name() != "headless":
+	_apply_window_title()
+	if DisplayServer.get_name() != "headless" and not OS.has_feature("web"):
 		get_window().size = WINDOW_SIZE
+	get_tree().auto_accept_quit = false
 	ensure_input_map()
 	_build_scene()
 	_load_best_score()
 	_return_to_title()
+	var hook_params: Dictionary = DebugHooksScript.read_params()
+	if hook_params.has(DebugHooksScript.PARAM_SHOT):
+		add_child(DebugHooksScript.new().setup(self, hook_params))
 
 func _build_scene() -> void:
+	add_child(ScreenFrameScript.new().configure(Vector2(WINDOW_SIZE), playfield_rect))
+	# everything in the world is clipped to the playfield so nothing spills onto the frame
+	var world_clip := Control.new()
+	world_clip.position = playfield_rect.position
+	world_clip.size = playfield_rect.size
+	world_clip.clip_contents = true
+	world_clip.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	add_child(world_clip)
 	world_root = Node2D.new()
-	add_child(world_root)
+	world_root.position = -playfield_rect.position
+	world_clip.add_child(world_root)
 	background = BackgroundScript.new()
 	background.configure(playfield_rect)
+	background.z_index = -2
 	world_root.add_child(background)
 	pickup_layer = Node2D.new()
 	pickup_layer.name = "Pickups"
@@ -186,13 +203,21 @@ func _build_scene() -> void:
 	add_child(hud)
 	hud.connect("language_toggle_requested", Callable(self, "_toggle_language"))
 
-func _draw() -> void:
-	draw_rect(Rect2(Vector2.ZERO, Vector2(WINDOW_SIZE.x, WINDOW_SIZE.y)), Color(0.01, 0.015, 0.03), true)
-	draw_rect(playfield_rect, Color(0.0, 0.0, 0.0, 0.0), false, 3.0)
-	draw_rect(Rect2(playfield_rect.position - Vector2(2.0, 2.0), playfield_rect.size + Vector2(4.0, 4.0)), Color(0.52, 0.92, 1.0, 0.3), false, 2.0)
-
 func _process(delta: float) -> void:
 	_update_shake(delta)
+
+func _notification(what: int) -> void:
+	if what == NOTIFICATION_WM_CLOSE_REQUEST:
+		_quit_cleanly()
+
+## Audio playbacks are only released by the AudioServer on a later frame, so
+## stop them first and quit after the server has had time to drop them.
+func _quit_cleanly() -> void:
+	if audio:
+		audio.shutdown()
+	for _frame in range(3):
+		await get_tree().process_frame
+	get_tree().quit()
 
 func _physics_process(delta: float) -> void:
 	if state == GameState.PLAYING:
@@ -813,9 +838,17 @@ func _toggle_language() -> void:
 	if state != GameState.MENU:
 		return
 	I18n.toggle_locale()
+	_apply_window_title()
 	hud.show_title(best_score, get_difficulty_labels(), difficulty_index, get_ship_label(), get_ship_description(), _menu_mode_label(), _menu_mode_description(), _endless_board_title(), _endless_board_text())
 	audio.play_confirm()
 	_update_hud()
+
+func _apply_window_title() -> void:
+	var title := tr("WINDOW_TITLE")
+	if OS.has_feature("web"):
+		JavaScriptBridge.eval("document.title = %s;" % JSON.stringify(title))
+	elif DisplayServer.get_name() != "headless":
+		get_window().title = title
 
 func _ship_key_for(value: String) -> String:
 	return str(I18n.find_entry(PLAYER_SHIPS, value).get("key", "spirit"))
@@ -1215,7 +1248,6 @@ func spawn_boss(config := {}) -> void:
 	var boss_config: Dictionary = _scaled_boss_config(config)
 	if current_boss_config.is_empty() or not allow_multi:
 		current_boss_config = boss_config.duplicate(true)
-	show_banner(str(boss_config.get("name", tr("BANNER_BOSS_APPROACH"))), str(boss_config.get("subtitle", "")))
 	var new_boss = BossScript.new().setup(self, boss_config)
 	enemy_layer.add_child(new_boss)
 	background.trigger_pulse(boss_config.get("accent_color", Color(1.0, 0.84, 0.6)), 0.32, 0.65)
@@ -1470,6 +1502,7 @@ func should_reduce_minor_fx() -> bool:
 	return enemy_bullets.size() + player_bullets.size() >= 220 or effect_layer.get_child_count() >= 70
 
 func spawn_ring_effect(position: Vector2, color: Color, from_radius: float, to_radius: float, duration := 0.45, width := 3.0) -> void:
+	color = BulletScript.ink_palette(color)
 	if effect_layer != null and effect_layer.get_child_count() >= 150:
 		return
 	if should_reduce_minor_fx() and to_radius <= 26.0 and duration <= 0.22:
@@ -1479,6 +1512,7 @@ func spawn_ring_effect(position: Vector2, color: Color, from_radius: float, to_r
 	effect_layer.add_child(effect)
 
 func spawn_explosion_effect(position: Vector2, color: Color, size := 22.0, duration := 0.55) -> void:
+	color = BulletScript.ink_palette(color)
 	if effect_layer != null and effect_layer.get_child_count() >= 150:
 		return
 	if should_reduce_minor_fx():
@@ -1489,6 +1523,7 @@ func spawn_explosion_effect(position: Vector2, color: Color, size := 22.0, durat
 	effect_layer.add_child(effect)
 
 func spawn_spark_effect(position: Vector2, color: Color, length := 28.0, duration := 0.35, fragments := 12) -> void:
+	color = BulletScript.ink_palette(color)
 	if effect_layer != null and effect_layer.get_child_count() >= 150:
 		return
 	if should_reduce_minor_fx():
@@ -1506,10 +1541,10 @@ func shake_screen(duration: float, strength: float) -> void:
 func _update_shake(delta: float) -> void:
 	if shake_time > 0.0:
 		shake_time = max(0.0, shake_time - delta)
-		world_root.position = Vector2(randf_range(-shake_strength, shake_strength), randf_range(-shake_strength, shake_strength))
+		world_root.position = -playfield_rect.position + Vector2(randf_range(-shake_strength, shake_strength), randf_range(-shake_strength, shake_strength))
 		shake_strength = lerpf(shake_strength, 0.0, delta * 3.4)
 	else:
-		world_root.position = Vector2.ZERO
+		world_root.position = -playfield_rect.position
 		shake_strength = 0.0
 
 func add_score(amount: int) -> void:
@@ -1556,15 +1591,19 @@ func _finish_dialogue() -> void:
 	state = dialogue_resume_state
 
 func on_boss_phase_changed(phase_name: String, current_hp: float, max_hp_value: float) -> void:
-	hud.set_boss_state(true, current_hp, max_hp_value, tr("UI_PHASE_BREAK") if phase_name == "Phase Break" else phase_name)
-	if phase_name != "Phase Break":
+	var is_break: bool = phase_name == BossScript.PHASE_BREAK
+	hud.set_boss_state(true, current_hp, max_hp_value, tr("UI_PHASE_BREAK") if is_break else phase_name)
+	if not is_break:
 		var spotlight_config: Dictionary = _boss_spotlight_config(phase_name)
 		var pulse_color: Color = spotlight_config.get("accent_color", Color(1.0, 0.82, 0.52))
-		show_banner(phase_name, str(spotlight_config.get("subtitle", tr("BANNER_PHASE_HINT"))))
 		hud.flash(pulse_color, 0.32, 0.26)
 		background.trigger_pulse(pulse_color, 0.18, 0.26)
-		hud.show_boss_spotlight(spotlight_config, 2.15 if phase_name.begins_with("Last Spell") else 1.75)
+		hud.show_boss_spotlight(spotlight_config, 2.15 if _is_last_boss_phase(phase_name) else 1.75)
 		audio.play_phase_break()
+
+func _is_last_boss_phase(phase_name: String) -> bool:
+	var phases: Array = current_boss_config.get("phases", [])
+	return not phases.is_empty() and str(phases[phases.size() - 1].get("name", "")) == phase_name
 
 func on_boss_phase_cleared(phase_name: String) -> void:
 	show_banner(tr("BANNER_SPELL_BREAK"), phase_name)
@@ -1623,7 +1662,7 @@ func _update_hud() -> void:
 		"power_max": int(MAX_POWER),
 		"graze": graze,
 		"stage_text": (tr("HUD_ENDLESS_STAGE") % [endless_wave, endless_score_multiplier]) if endless_mode_active else (tr("HUD_STAGE_PROGRESS") % [current_stage, FINAL_STAGE]),
-		"state_text": _state_text()
+		"difficulty_text": get_difficulty_label()
 	})
 	if state == GameState.MENU:
 		hud.update_title_menu(get_difficulty_labels(), difficulty_index, get_ship_label(), get_ship_description(), _menu_mode_label(), _menu_mode_description(), _endless_board_title(), _endless_board_text())
@@ -1632,26 +1671,6 @@ func _update_hud() -> void:
 		hud.set_boss_states(boss_states)
 	elif state != GameState.MENU:
 		hud.set_boss_states([])
-
-func _state_text() -> String:
-	match state:
-		GameState.MENU:
-			return tr("STATE_TITLE")
-		GameState.DIALOGUE:
-			return tr("STATE_DIALOGUE")
-		GameState.REWARD:
-			return tr("STATE_REWARD")
-		GameState.PLAYING:
-			return tr("STATE_BATTLE_CHEAT") if infinite_lives_cheat else tr("STATE_BATTLE")
-		GameState.TRANSITION:
-			return tr("STATE_TRANSITION")
-		GameState.PAUSED:
-			return tr("STATE_PAUSED")
-		GameState.GAME_OVER:
-			return tr("UI_GAME_OVER")
-		GameState.VICTORY:
-			return tr("UI_ALL_CLEAR")
-	return ""
 
 func _load_best_score() -> void:
 	var config := ConfigFile.new()

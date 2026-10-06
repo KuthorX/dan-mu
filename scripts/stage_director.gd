@@ -98,10 +98,10 @@ func _build_stage_one() -> void:
 		"mood": "calm",
 		"motif": "halo",
 		"phases": [
-			{"name": "Nonspell · Scarlet Spiral", "hp": 420.0, "color": Color(1.0, 0.45, 0.68), "bonus": 40000, "pattern": &"scarlet_spiral", "subtitle": tr("S1_P1_SUB"), "mood": "calm", "motif": "halo", "quote": tr("S1_P1_QUOTE")},
-			{"name": "Spell · Moon Petal Cage", "hp": 560.0, "color": Color(0.58, 0.95, 1.0), "bonus": 70000, "pattern": &"moon_petals", "subtitle": tr("S1_P2_SUB"), "mood": "soft", "motif": "ribbon", "quote": tr("S1_P2_QUOTE")},
-			{"name": "Spell · Prism Cascade", "hp": 700.0, "color": Color(0.76, 0.62, 1.0), "bonus": 100000, "pattern": &"prism_cascade", "subtitle": tr("S1_P3_SUB"), "mood": "soft", "motif": "crown", "quote": tr("S1_P3_QUOTE")},
-			{"name": "Last Spell · Falling Star Border", "hp": 860.0, "color": Color(1.0, 0.88, 0.46), "bonus": 150000, "pattern": &"falling_star", "subtitle": tr("S1_P4_SUB"), "mood": "angry", "motif": "crown", "quote": tr("S1_P4_QUOTE")}
+			{"name": tr("PHASE_SCARLET_SPIRAL"), "hp": 420.0, "color": Color(1.0, 0.45, 0.68), "bonus": 40000, "pattern": &"scarlet_spiral", "subtitle": tr("S1_P1_SUB"), "mood": "calm", "motif": "halo", "quote": tr("S1_P1_QUOTE")},
+			{"name": tr("PHASE_MOON_PETAL_CAGE"), "hp": 560.0, "color": Color(0.58, 0.95, 1.0), "bonus": 70000, "pattern": &"moon_petals", "subtitle": tr("S1_P2_SUB"), "mood": "soft", "motif": "ribbon", "quote": tr("S1_P2_QUOTE")},
+			{"name": tr("PHASE_PRISM_CASCADE"), "hp": 700.0, "color": Color(0.76, 0.62, 1.0), "bonus": 100000, "pattern": &"prism_cascade", "subtitle": tr("S1_P3_SUB"), "mood": "soft", "motif": "crown", "quote": tr("S1_P3_QUOTE")},
+			{"name": tr("PHASE_FALLING_STAR_BORDER"), "hp": 860.0, "color": Color(1.0, 0.88, 0.46), "bonus": 150000, "pattern": &"falling_star", "subtitle": tr("S1_P4_SUB"), "mood": "angry", "motif": "crown", "quote": tr("S1_P4_QUOTE")}
 		]
 	}
 	_push_banner(0.3, stage_title, stage_subtitle)
@@ -359,10 +359,10 @@ func _build_stage_two() -> void:
 		"mood": "angry",
 		"motif": "gear",
 		"phases": [
-			{"name": "Nonspell · Magnetic Bloom", "hp": 540.0, "color": Color(1.0, 0.64, 0.42), "bonus": 70000, "pattern": &"magnetic_bloom", "subtitle": tr("S2_P1_SUB"), "mood": "angry", "motif": "gear", "quote": tr("S2_P1_QUOTE")},
-			{"name": "Spell · Aurora Lattice", "hp": 720.0, "color": Color(0.48, 0.94, 1.0), "bonus": 110000, "pattern": &"aurora_lattice", "subtitle": tr("S2_P2_SUB"), "mood": "calm", "motif": "halo", "quote": tr("S2_P2_QUOTE")},
-			{"name": "Spell · Comet Refinery", "hp": 880.0, "color": Color(0.86, 0.56, 1.0), "bonus": 150000, "pattern": &"comet_refinery", "subtitle": tr("S2_P3_SUB"), "mood": "angry", "motif": "gear", "quote": tr("S2_P3_QUOTE")},
-			{"name": "Last Spell · Boundary Collapse Furnace", "hp": 1080.0, "color": Color(1.0, 0.88, 0.52), "bonus": 220000, "pattern": &"boundary_collapse", "subtitle": tr("S2_P4_SUB"), "mood": "angry", "motif": "crown", "quote": tr("S2_P4_QUOTE")}
+			{"name": tr("PHASE_MAGNETIC_BLOOM"), "hp": 540.0, "color": Color(1.0, 0.64, 0.42), "bonus": 70000, "pattern": &"magnetic_bloom", "subtitle": tr("S2_P1_SUB"), "mood": "angry", "motif": "gear", "quote": tr("S2_P1_QUOTE")},
+			{"name": tr("PHASE_AURORA_LATTICE"), "hp": 720.0, "color": Color(0.48, 0.94, 1.0), "bonus": 110000, "pattern": &"aurora_lattice", "subtitle": tr("S2_P2_SUB"), "mood": "calm", "motif": "halo", "quote": tr("S2_P2_QUOTE")},
+			{"name": tr("PHASE_COMET_REFINERY"), "hp": 880.0, "color": Color(0.86, 0.56, 1.0), "bonus": 150000, "pattern": &"comet_refinery", "subtitle": tr("S2_P3_SUB"), "mood": "angry", "motif": "gear", "quote": tr("S2_P3_QUOTE")},
+			{"name": tr("PHASE_COLLAPSE_FURNACE"), "hp": 1080.0, "color": Color(1.0, 0.88, 0.52), "bonus": 220000, "pattern": &"boundary_collapse", "subtitle": tr("S2_P4_SUB"), "mood": "angry", "motif": "crown", "quote": tr("S2_P4_QUOTE")}
 		]
 	}
 	_push_banner(0.3, stage_title, stage_subtitle)

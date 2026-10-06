@@ -1,6 +1,33 @@
 extends Node2D
 
-const ColorFx = preload("res://scripts/color_fx.gd")
+const PLAYER_SHOT_ALPHA := 0.42
+const SPRITES := {
+	&"orb": preload("res://art/bullets/orb.png"),
+	&"diamond": preload("res://art/bullets/diamond.png"),
+	&"needle": preload("res://art/bullets/needle.png"),
+	&"petal": preload("res://art/bullets/petal.png"),
+	&"star": preload("res://art/bullets/star.png"),
+}
+## Half-extent of each sprite in bullet-radius units (matches BULLET_SHAPES in gen_art.py).
+const SPRITE_EXTENTS := {&"orb": 1.3, &"diamond": 1.6, &"needle": 2.2, &"petal": 2.0, &"star": 1.7}
+## Enemy fire is re-inked into four pigments of the shrine palette; patterns keep
+## their identity through hue family and shape, the screen keeps one colour story.
+const VERMILION := Color(0.93, 0.30, 0.20)
+const IVORY := Color(0.96, 0.92, 0.82)
+const VERDIGRIS := Color(0.30, 0.82, 0.72)
+const GOLD := Color(0.95, 0.74, 0.30)
+
+static func ink_palette(source: Color) -> Color:
+	if source.s < 0.22:
+		return IVORY
+	var hue: float = source.h * 360.0
+	if hue < 22.0 or hue >= 300.0:
+		return VERMILION
+	if hue < 70.0:
+		return GOLD
+	if hue < 250.0:
+		return VERDIGRIS
+	return IVORY
 
 var game = null
 var faction: StringName = &"enemy"
@@ -38,6 +65,11 @@ func setup(game_ref, spawn_pos: Vector2, velocity_vector: Vector2, bullet_factio
 	faction = bullet_faction
 	shape = options.get("shape", &"orb")
 	color = options.get("color", Color.WHITE)
+	if faction == &"enemy":
+		color = ink_palette(color)
+	else:
+		# player shots are washed toward paper so they never read as enemy pigment
+		color = color.lerp(IVORY, 0.55)
 	radius = options.get("radius", 6.0)
 	damage = options.get("damage", 1.0)
 	life_time = options.get("life_time", 8.5)
@@ -141,46 +173,40 @@ func destroy(show_effect := true, cancelled := false) -> void:
 		game.spawn_ring_effect(global_position, burst_color, radius * 0.2, radius * 1.9, 0.2, 2.0)
 	queue_free()
 
+## Enemy bullets are pigment drops painted by tools/art/gen_art.py: an ink keyline
+## outside, pooled colour at the rim and a pale core, so each one reads on any
+## background. Player shots stay translucent so they never hide enemy fire.
 func _draw() -> void:
+	if faction == &"player":
+		_draw_player_shot()
+		return
+	var sprite: Texture2D = SPRITES.get(shape, SPRITES[&"orb"])
+	var half: float = radius * float(SPRITE_EXTENTS.get(shape, 1.3))
+	draw_texture_rect(sprite, Rect2(-half, -half, half * 2.0, half * 2.0), false, color)
+	draw_circle(Vector2.ZERO, radius * 0.36, color.lerp(Color.WHITE, 0.8))
+
+func _draw_player_shot() -> void:
+	var tint := Color(color.r, color.g, color.b, PLAYER_SHOT_ALPHA)
+	if shape == &"orb":
+		draw_circle(Vector2.ZERO, radius * 0.8, tint)
+	else:
+		draw_colored_polygon(_shape_points(radius * 0.85), tint)
+
+func _shape_points(size: float) -> PackedVector2Array:
 	match shape:
 		&"diamond":
-			var diamond := PackedVector2Array([
-				Vector2(0.0, -radius * 1.3),
-				Vector2(radius * 0.9, 0.0),
-				Vector2(0.0, radius * 1.3),
-				Vector2(-radius * 0.9, 0.0)
-			])
-			draw_colored_polygon(diamond, ColorFx.alpha(color, 0.95))
-			draw_circle(Vector2.ZERO, radius * 0.26, color.lightened(0.3))
+			return PackedVector2Array([Vector2(0.0, -size * 1.3), Vector2(size * 0.9, 0.0), Vector2(0.0, size * 1.3), Vector2(-size * 0.9, 0.0)])
 		&"needle":
-			var needle := PackedVector2Array([
-				Vector2(0.0, -radius * 1.9),
-				Vector2(radius * 0.45, -radius * 0.15),
-				Vector2(0.0, radius * 1.7),
-				Vector2(-radius * 0.45, -radius * 0.15)
-			])
-			draw_colored_polygon(needle, ColorFx.alpha(color, 0.95))
-			draw_circle(Vector2.ZERO, radius * 0.18, ColorFx.alpha(Color.WHITE, 0.85))
+			return PackedVector2Array([Vector2(0.0, -size * 1.9), Vector2(size * 0.5, -size * 0.15), Vector2(0.0, size * 1.7), Vector2(-size * 0.5, -size * 0.15)])
 		&"petal":
-			var petal := PackedVector2Array([
-				Vector2(0.0, -radius * 1.7),
-				Vector2(radius * 0.7, -radius * 0.6),
-				Vector2(radius * 0.55, radius * 1.0),
-				Vector2(0.0, radius * 1.5),
-				Vector2(-radius * 0.55, radius * 1.0),
-				Vector2(-radius * 0.7, -radius * 0.6)
-			])
-			draw_colored_polygon(petal, ColorFx.alpha(color, 0.92))
-			draw_circle(Vector2.ZERO, radius * 0.22, color.lightened(0.35))
+			return PackedVector2Array([Vector2(0.0, -size * 1.7), Vector2(size * 0.7, -size * 0.6), Vector2(size * 0.55, size * 1.0), Vector2(0.0, size * 1.5), Vector2(-size * 0.55, size * 1.0), Vector2(-size * 0.7, -size * 0.6)])
 		&"star":
 			var star := PackedVector2Array()
 			for index in range(10):
-				var local_radius: float = radius * (1.4 if index % 2 == 0 else 0.58)
-				var angle := -PI * 0.5 + TAU * float(index) / 10.0
-				star.append(Vector2.RIGHT.rotated(angle) * local_radius)
-			draw_colored_polygon(star, ColorFx.alpha(color, 0.94))
-			draw_circle(Vector2.ZERO, radius * 0.24, ColorFx.alpha(Color.WHITE, 0.8))
-		_:
-			draw_circle(Vector2.ZERO, radius * 1.08, ColorFx.alpha(color, 0.25))
-			draw_circle(Vector2.ZERO, radius, ColorFx.alpha(color, 0.95))
-			draw_circle(Vector2.ZERO, radius * 0.38, ColorFx.alpha(color.lightened(0.3), 0.95))
+				var local_radius: float = size * (1.4 if index % 2 == 0 else 0.62)
+				star.append(Vector2.RIGHT.rotated(-PI * 0.5 + TAU * float(index) / 10.0) * local_radius)
+			return star
+	var circle := PackedVector2Array()
+	for index in range(12):
+		circle.append(Vector2.RIGHT.rotated(TAU * float(index) / 12.0) * size)
+	return circle

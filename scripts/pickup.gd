@@ -1,6 +1,5 @@
 extends Node2D
 
-const ColorFx = preload("res://scripts/color_fx.gd")
 
 var game = null
 var pickup_type: StringName = &"point"
@@ -56,28 +55,16 @@ func _physics_process(delta: float) -> void:
 	if global_position.y > bounds.position.y + bounds.size.y + 48.0:
 		queue_free()
 
+## Power items are vermilion seals, point items are paper slips; both carry an ink keyline.
 func _draw() -> void:
-	var main_color := Color(0.95, 0.95, 1.0)
-	var accent_color := Color(0.5, 0.9, 1.0)
+	var face := Color(0.93, 0.89, 0.80)
+	var mark := Color(0.16, 0.30, 0.62)
 	if pickup_type == &"power":
-		main_color = Color(1.0, 0.48, 0.88)
-		accent_color = Color(1.0, 0.82, 0.32)
-	var local_spin := spin
-	draw_set_transform(Vector2.ZERO, local_spin, Vector2.ONE)
-	var points := PackedVector2Array([
-		Vector2(0.0, -radius),
-		Vector2(radius * 0.6, 0.0),
-		Vector2(0.0, radius),
-		Vector2(-radius * 0.6, 0.0)
-	])
-	var outline := PackedVector2Array([
-		Vector2(0.0, -radius),
-		Vector2(radius * 0.6, 0.0),
-		Vector2(0.0, radius),
-		Vector2(-radius * 0.6, 0.0),
-		Vector2(0.0, -radius)
-	])
-	draw_colored_polygon(points, ColorFx.alpha(main_color, 0.95))
-	draw_polyline(outline, accent_color, 2.0, true)
-	draw_circle(Vector2.ZERO, radius * 0.32, ColorFx.alpha(accent_color, 0.95))
+		face = Color(0.85, 0.25, 0.17)
+		mark = Color(0.98, 0.93, 0.84)
+	var half: float = radius * 0.62
+	draw_set_transform(Vector2.ZERO, sin(spin) * 0.35, Vector2.ONE)
+	draw_rect(Rect2(Vector2(-half - 2.0, -half - 2.0), Vector2(half + 2.0, half + 2.0) * 2.0), Color(0.02, 0.01, 0.03, 0.9), true)
+	draw_rect(Rect2(Vector2(-half, -half), Vector2(half, half) * 2.0), face, true)
+	draw_rect(Rect2(Vector2(-half * 0.45, -half * 0.45), Vector2(half, half) * 0.9), mark, true)
 	draw_set_transform(Vector2.ZERO, 0.0, Vector2.ONE)

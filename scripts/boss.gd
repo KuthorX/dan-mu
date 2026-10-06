@@ -1,6 +1,10 @@
 extends Node2D
 
-const ColorFx = preload("res://scripts/color_fx.gd")
+const BulletScript = preload("res://scripts/bullet.gd")
+const KEYLINE := Color(0.02, 0.01, 0.03, 0.9)
+
+## Sentinel phase name sent to the game between two phases (shown as UI_PHASE_BREAK).
+const PHASE_BREAK := "Phase Break"
 
 var game = null
 var boss_name := "Boundary Watcher"
@@ -25,7 +29,8 @@ var alt_toggle := false
 var flash_timer := 0.0
 var current_phase_name := ""
 var current_pattern: StringName = &"scarlet_spiral"
-var current_color := Color(1.0, 0.5, 0.72)
+var current_color := Color(0.93, 0.30, 0.20)
+var spell_circle: SpellCircle
 
 func setup(game_ref, config := {}):
 	game = game_ref
@@ -41,11 +46,15 @@ func setup(game_ref, config := {}):
 
 func _default_phases() -> Array:
 	return [
-		{"name": "Nonspell · Scarlet Spiral", "hp": 420.0, "color": Color(1.0, 0.45, 0.68), "bonus": 40000, "pattern": &"scarlet_spiral"},
-		{"name": "Spell · Moon Petal Cage", "hp": 560.0, "color": Color(0.58, 0.95, 1.0), "bonus": 70000, "pattern": &"moon_petals"},
-		{"name": "Spell · Prism Cascade", "hp": 700.0, "color": Color(0.76, 0.62, 1.0), "bonus": 100000, "pattern": &"prism_cascade"},
-		{"name": "Last Spell · Falling Star Border", "hp": 860.0, "color": Color(1.0, 0.88, 0.46), "bonus": 150000, "pattern": &"falling_star"}
+		{"name": tr("PHASE_SCARLET_SPIRAL"), "hp": 420.0, "color": Color(1.0, 0.45, 0.68), "bonus": 40000, "pattern": &"scarlet_spiral"},
+		{"name": tr("PHASE_MOON_PETAL_CAGE"), "hp": 560.0, "color": Color(0.58, 0.95, 1.0), "bonus": 70000, "pattern": &"moon_petals"},
+		{"name": tr("PHASE_PRISM_CASCADE"), "hp": 700.0, "color": Color(0.76, 0.62, 1.0), "bonus": 100000, "pattern": &"prism_cascade"},
+		{"name": tr("PHASE_FALLING_STAR_BORDER"), "hp": 860.0, "color": Color(1.0, 0.88, 0.46), "bonus": 150000, "pattern": &"falling_star"}
 	]
+
+func _ready() -> void:
+	spell_circle = SpellCircle.new()
+	add_child(spell_circle)
 
 func _enter_tree() -> void:
 	if game:
@@ -68,6 +77,7 @@ func _physics_process(delta: float) -> void:
 		return
 	if transition_timer > 0.0:
 		transition_timer -= delta
+		spell_circle.strength = max(0.0, spell_circle.strength - delta * 2.0)
 		global_position = global_position.lerp(move_target, delta * 2.3)
 		queue_redraw()
 		if transition_timer <= 0.0:
@@ -75,6 +85,8 @@ func _physics_process(delta: float) -> void:
 		return
 	phase_time += delta
 	orbit_angle += delta * 1.7
+	spell_circle.color = current_color
+	spell_circle.strength = min(1.0, phase_time * 1.5)
 	_update_movement(delta)
 	match current_pattern:
 		&"scarlet_spiral":
@@ -117,7 +129,7 @@ func _begin_phase(index: int) -> void:
 	var phase: Dictionary = phases[phase_index]
 	current_phase_name = str(phase.get("name", "Spell Card"))
 	current_pattern = phase.get("pattern", &"scarlet_spiral")
-	current_color = phase.get("color", Color(1.0, 0.5, 0.72))
+	current_color = BulletScript.ink_palette(phase.get("color", Color(1.0, 0.5, 0.72)))
 	max_hp = float(phase.get("hp", 500.0))
 	hp = max_hp
 	phase_time = 0.0
@@ -151,7 +163,7 @@ func take_damage(amount: float) -> bool:
 			game.cancel_all_enemy_bullets(true)
 			game.spawn_explosion_effect(global_position, current_color, 42.0, 0.7)
 			game.spawn_spark_effect(global_position, current_color.lightened(0.2), 74.0, 0.55, 22)
-			game.on_boss_phase_changed("Phase Break", 0.0, 1.0)
+			game.on_boss_phase_changed(PHASE_BREAK, 0.0, 1.0)
 	return true
 
 func defeat() -> void:
@@ -568,9 +580,7 @@ func _pattern_crown_judgment(delta: float) -> void:
 func _draw() -> void:
 	var body_color: Color = current_color
 	if flash_timer > 0.0:
-		body_color = Color.WHITE
-	var aura_alpha: float = 0.18 + 0.08 * sin(phase_time * 4.0)
-	draw_circle(Vector2.ZERO, radius * 1.35, ColorFx.alpha(body_color, aura_alpha))
+		body_color = current_color.lerp(Color.WHITE, 0.45)
 	var skirt := PackedVector2Array([
 		Vector2(0.0, -radius * 1.1),
 		Vector2(radius * 0.82, -radius * 0.2),
@@ -579,10 +589,43 @@ func _draw() -> void:
 		Vector2(-radius * 0.66, radius * 1.05),
 		Vector2(-radius * 0.82, -radius * 0.2)
 	])
-	draw_colored_polygon(skirt, ColorFx.alpha(body_color, 0.95))
-	draw_circle(Vector2.ZERO, radius * 0.28, ColorFx.alpha(Color.WHITE, 0.9))
-	draw_circle(Vector2(0.0, radius * 0.12), radius * 0.45, ColorFx.alpha(body_color.lightened(0.18), 0.52))
+	var outline: Array = Geometry2D.offset_polygon(skirt, 2.5)
+	if not outline.is_empty():
+		draw_colored_polygon(outline[0], KEYLINE)
+	draw_colored_polygon(skirt, body_color)
+	# antialiased edge so the flat fill never shows stair-stepping
+	draw_polyline(skirt + PackedVector2Array([skirt[0]]), KEYLINE, 1.2, true)
+	draw_circle(Vector2.ZERO, radius * 0.34, KEYLINE)
+	draw_circle(Vector2.ZERO, radius * 0.26, Color(0.93, 0.89, 0.80))
 	for wing_index in range(3):
 		var offset_angle: float = orbit_angle + float(wing_index) * TAU / 3.0
-		var wing_pos: Vector2 = Vector2(cos(offset_angle), sin(offset_angle)) * (radius * 0.95)
-		draw_circle(wing_pos, 5.0, ColorFx.alpha(body_color, 0.45))
+		var wing_pos: Vector2 = Vector2(cos(offset_angle), sin(offset_angle)) * (radius * 1.05)
+		draw_rect(Rect2(wing_pos - Vector2(5.0, 5.0), Vector2(10.0, 10.0)), KEYLINE, true)
+		draw_rect(Rect2(wing_pos - Vector2(3.5, 3.5), Vector2(7.0, 7.0)), body_color.lightened(0.2), true)
+
+## Touhou-style spell circle drawn beneath the bullets (negative z) so it never hides them.
+class SpellCircle extends Node2D:
+	var color := Color(1.0, 0.85, 0.5)
+	var strength := 0.0
+	var turn := 0.0
+
+	func _ready() -> void:
+		z_index = -1
+
+	func _process(delta: float) -> void:
+		turn += delta * 0.6
+		queue_redraw()
+
+	func _draw() -> void:
+		if strength <= 0.01:
+			return
+		# an ensō: one open brush circle, heavy where the brush lands and dry where it lifts
+		# (no dots or glyphs, nothing that could be mistaken for a bullet)
+		var segments := 48
+		var sweep: float = TAU * 0.9
+		for index in range(segments):
+			var t: float = float(index) / float(segments)
+			var from_angle: float = turn + sweep * t
+			var width: float = lerpf(7.0, 1.0, pow(t, 1.6))
+			var alpha: float = 0.34 * strength * lerpf(1.0, 0.45, t)
+			draw_arc(Vector2.ZERO, 108.0 + sin(t * 9.0) * 1.5, from_angle, from_angle + sweep / float(segments) + 0.01, 3, Color(color.r, color.g, color.b, alpha), width, true)
