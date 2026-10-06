@@ -10,6 +10,7 @@ const HudScript = preload("res://scripts/hud.gd")
 const StageDirectorScript = preload("res://scripts/stage_director.gd")
 const EffectScript = preload("res://scripts/effect.gd")
 const AudioManagerScript = preload("res://scripts/audio_manager.gd")
+const I18n = preload("res://scripts/i18n.gd")
 
 enum GameState { MENU, DIALOGUE, REWARD, PLAYING, TRANSITION, PAUSED, GAME_OVER, VICTORY }
 
@@ -24,23 +25,23 @@ const MAX_PLAYER_OPTIONS := 10
 const MAX_PLAYER_OPTION_BONUS := 8
 const PLAYER_SHIPS := [
 	{
-		"key": "spirit", "label": "灵枢型",
-		"description": "前方火力均衡，拥有稳定的结界灵击。",
+		"key": "spirit", "label": "SHIP_SPIRIT",
+		"description": "SHIP_SPIRIT_DESC",
 		"fast_speed": 330.0, "slow_speed": 165.0,
 		"primary_color": Color(0.72, 0.96, 1.0),
 		"secondary_color": Color(0.95, 0.74, 1.0)
 	},
 	{
-		"key": "gale", "label": "岚羽型",
-		"description": "散射范围更广，灵击会卷起风暴并吸附道具。",
+		"key": "gale", "label": "SHIP_GALE",
+		"description": "SHIP_GALE_DESC",
 		"fast_speed": 352.0, "slow_speed": 172.0,
 		"graze_radius": 26.0,
 		"primary_color": Color(0.62, 1.0, 0.88),
 		"secondary_color": Color(1.0, 0.86, 0.52)
 	},
 	{
-		"key": "lance", "label": "星枪型",
-		"description": "前方集中贯穿火力，灵击擅长压制 Boss。",
+		"key": "lance", "label": "SHIP_LANCE",
+		"description": "SHIP_LANCE_DESC",
 		"fast_speed": 318.0, "slow_speed": 154.0,
 		"hitbox_radius": 3.2,
 		"primary_color": Color(1.0, 0.88, 0.58),
@@ -49,25 +50,25 @@ const PLAYER_SHIPS := [
 ]
 const DIFFICULTIES := [
 	{
-		"key": "easy", "label": "简单", "enemy_hp": 0.84, "enemy_bullet_speed": 0.90,
+		"key": "easy", "label": "DIFF_EASY", "enemy_hp": 0.84, "enemy_bullet_speed": 0.90,
 		"enemy_fire_interval": 1.14, "enemy_density": -1, "boss_hp": 0.88,
 		"boss_bullet_speed": 0.92, "boss_fire_interval": 1.12, "boss_density": -1,
 		"score_multiplier": 1.00
 	},
 	{
-		"key": "normal", "label": "普通", "enemy_hp": 1.00, "enemy_bullet_speed": 1.00,
+		"key": "normal", "label": "DIFF_NORMAL", "enemy_hp": 1.00, "enemy_bullet_speed": 1.00,
 		"enemy_fire_interval": 1.00, "enemy_density": 0, "boss_hp": 1.00,
 		"boss_bullet_speed": 1.00, "boss_fire_interval": 1.00, "boss_density": 0,
 		"score_multiplier": 1.18
 	},
 	{
-		"key": "hard", "label": "困难", "enemy_hp": 1.14, "enemy_bullet_speed": 1.08,
+		"key": "hard", "label": "DIFF_HARD", "enemy_hp": 1.14, "enemy_bullet_speed": 1.08,
 		"enemy_fire_interval": 0.92, "enemy_density": 1, "boss_hp": 1.16,
 		"boss_bullet_speed": 1.08, "boss_fire_interval": 0.90, "boss_density": 1,
 		"score_multiplier": 1.42
 	},
 	{
-		"key": "lunatic", "label": "狂气", "enemy_hp": 1.28, "enemy_bullet_speed": 1.16,
+		"key": "lunatic", "label": "DIFF_LUNATIC", "enemy_hp": 1.28, "enemy_bullet_speed": 1.16,
 		"enemy_fire_interval": 0.84, "enemy_density": 2, "boss_hp": 1.30,
 		"boss_bullet_speed": 1.16, "boss_fire_interval": 0.82, "boss_density": 2,
 		"score_multiplier": 1.78
@@ -146,6 +147,7 @@ var pickups: Array = []
 
 func _ready() -> void:
 	randomize()
+	I18n.apply_saved_or_default()
 	if DisplayServer.get_name() != "headless":
 		get_window().size = WINDOW_SIZE
 	ensure_input_map()
@@ -182,6 +184,7 @@ func _build_scene() -> void:
 	hud = HudScript.new()
 	hud.setup(playfield_rect, WINDOW_SIZE)
 	add_child(hud)
+	hud.connect("language_toggle_requested", Callable(self, "_toggle_language"))
 
 func _draw() -> void:
 	draw_rect(Rect2(Vector2.ZERO, Vector2(WINDOW_SIZE.x, WINDOW_SIZE.y)), Color(0.01, 0.015, 0.03), true)
@@ -220,6 +223,10 @@ func _unhandled_input(event: InputEvent) -> void:
 		get_viewport().set_input_as_handled()
 		return
 	if state == GameState.MENU:
+		if event.is_action_pressed(&"toggle_language"):
+			_toggle_language()
+			get_viewport().set_input_as_handled()
+			return
 		if event.is_action_pressed(&"focus"):
 			_cycle_menu_mode()
 			get_viewport().set_input_as_handled()
@@ -306,11 +313,11 @@ func _toggle_infinite_lives_cheat() -> void:
 	infinite_lives_cheat = not infinite_lives_cheat
 	if infinite_lives_cheat:
 		lives = max(lives, 99)
-		show_banner("作弊已启用", "无限生命模式")
+		show_banner(tr("BANNER_CHEAT_ON"), tr("BANNER_CHEAT_ON_SUB"))
 		hud.flash(Color(1.0, 0.82, 0.56), 0.28, 0.26)
 		background.trigger_pulse(Color(1.0, 0.78, 0.56), 0.2, 0.3)
 	else:
-		show_banner("作弊已关闭", "恢复正常残机规则")
+		show_banner(tr("BANNER_CHEAT_OFF"), tr("BANNER_CHEAT_OFF_SUB"))
 		hud.flash(Color(0.62, 0.88, 1.0), 0.22, 0.22)
 	audio.play_confirm()
 	_update_hud()
@@ -324,6 +331,7 @@ func ensure_input_map() -> void:
 	_bind_action(&"focus", [KEY_SHIFT])
 	_bind_action(&"bomb", [KEY_X])
 	_bind_action(&"pause", [KEY_ESCAPE])
+	_bind_action(&"toggle_language", [KEY_L])
 	_bind_action(&"ui_accept", [KEY_ENTER, KEY_KP_ENTER])
 
 func _bind_action(action: StringName, keys: Array) -> void:
@@ -415,7 +423,7 @@ func _begin_stage(stage_number: int) -> void:
 	hud.hide_overlay()
 	hud.end_dialogue()
 	hud.flash(stage_info.get("accent_color", Color(1.0, 1.0, 1.0)), 0.45, 0.35)
-	show_banner(stage_info.get("title", "关卡"), stage_info.get("subtitle", ""))
+	show_banner(stage_info.get("title", tr("UI_STAGE_FALLBACK")), stage_info.get("subtitle", ""))
 	audio.play_stage_theme(stage_number)
 	queue_redraw()
 
@@ -450,7 +458,7 @@ func _begin_endless_run() -> void:
 	hud.hide_overlay()
 	hud.end_dialogue()
 	hud.flash(Color(0.96, 0.78, 1.0), 0.38, 0.3)
-	show_banner("无尽模式", "通关后解锁的持续挑战")
+	show_banner(tr("MODE_ENDLESS"), tr("BANNER_ENDLESS_SUB"))
 	background.trigger_pulse(Color(0.96, 0.78, 1.0), 0.24, 0.36)
 	audio.play_stage_theme(5)
 	_begin_endless_wave()
@@ -459,19 +467,19 @@ func _endless_wave_multiplier() -> float:
 	return 1.0 + float(max(0, endless_wave - 1)) * 0.12
 
 func _endless_board_title() -> String:
-	return "波次排行榜"
+	return tr("ENDLESS_BOARD_TITLE")
 
 func _endless_board_text() -> String:
 	if endless_leaderboard.is_empty():
-		return "暂无无尽记录。\n进入无尽模式并坚持更久吧。"
+		return tr("ENDLESS_BOARD_EMPTY")
 	var lines: Array[String] = []
 	for index in range(min(4, endless_leaderboard.size())):
 		var record: Dictionary = endless_leaderboard[index]
 		var total_seconds: int = int(record.get("time", 0))
 		var minutes: int = total_seconds / 60
 		var seconds: int = total_seconds % 60
-		lines.append("%d. 第 %d 波  %09d 分  %02d:%02d" % [index + 1, int(record.get("wave", 0)), int(record.get("score", 0)), minutes, seconds])
-		lines.append("   %s / %s" % [str(record.get("ship", "灵枢型")), str(record.get("difficulty", "普通"))])
+		lines.append(tr("ENDLESS_BOARD_ROW") % [index + 1, int(record.get("wave", 0)), int(record.get("score", 0)), minutes, seconds])
+		lines.append("   %s / %s" % [_ship_label_for(str(record.get("ship", "spirit"))), _difficulty_label_for(str(record.get("difficulty", "normal")))])
 	return "\n".join(lines)
 
 func _sort_endless_records(a: Dictionary, b: Dictionary) -> bool:
@@ -595,7 +603,7 @@ func _begin_endless_wave() -> void:
 	endless_spawn_events = _build_endless_wave_events(endless_wave)
 	current_boss_config.clear()
 	background.set_stage_theme(current_stage)
-	show_banner("无尽模式 第 %d 波" % endless_wave, "波次越高，敌人越强；高波次可能出现双 Boss")
+	show_banner(tr("BANNER_ENDLESS_WAVE") % endless_wave, tr("BANNER_ENDLESS_WAVE_SUB"))
 	background.trigger_pulse(Color(0.92, 0.76, 1.0), 0.2, 0.28)
 	if player and is_instance_valid(player):
 		player.set_invulnerable(0.9)
@@ -689,14 +697,14 @@ func _build_endless_wave_events(wave: int) -> Array:
 	return events
 
 func _build_endless_boss_config(wave: int, allow_multi := false) -> Dictionary:
-	var title_suffix := "双核" if allow_multi else "单核"
+	var title_suffix := tr("ENDLESS_CORE_TWIN") if allow_multi else tr("ENDLESS_CORE_SINGLE")
 	var accent := Color(1.0, 0.74, 0.56) if wave % 2 == 0 else Color(0.74, 0.96, 1.0)
 	var secondary := Color(0.72, 0.94, 1.0) if wave % 2 == 0 else Color(1.0, 0.72, 0.64)
 	var hp_scale: float = 1.0 + float(wave - 1) * 0.09
 	return {
 		"allow_multi": allow_multi,
-		"name": "无尽裁定体 %d · %s" % [wave, title_suffix],
-		"subtitle": "波次越高，审判越密。",
+		"name": tr("ENDLESS_BOSS_NAME") % [wave, title_suffix],
+		"subtitle": tr("ENDLESS_BOSS_SUB"),
 		"radius": 34.0 if allow_multi else 40.0,
 		"accent_color": accent,
 		"secondary_color": secondary,
@@ -704,8 +712,8 @@ func _build_endless_boss_config(wave: int, allow_multi := false) -> Dictionary:
 		"mood": "angry",
 		"motif": "crown",
 		"phases": [
-			{"name": "非符 · 终界格轮", "hp": (420.0 if allow_multi else 760.0) * hp_scale, "color": accent, "bonus": 80000, "pattern": &"eclipse_lattice", "subtitle": "格轮与追尾同步施压。", "mood": "angry", "motif": "gear", "quote": "继续躲，我会把路一条条关掉。"},
-			{"name": "符卡 · 王冠裁断", "hp": (540.0 if allow_multi else 980.0) * hp_scale, "color": secondary, "bonus": 120000, "pattern": &"crown_judgment", "subtitle": "收束扇形与坠幕封死中场。", "mood": "angry", "motif": "crown", "quote": "你的空隙，只是我故意留下的审判间隔。"}
+			{"name": tr("PHASE_FINAL_LATTICE_WHEEL"), "hp": (420.0 if allow_multi else 760.0) * hp_scale, "color": accent, "bonus": 80000, "pattern": &"eclipse_lattice", "subtitle": tr("ENDLESS_P1_SUB"), "mood": "angry", "motif": "gear", "quote": tr("ENDLESS_P1_QUOTE")},
+			{"name": tr("PHASE_CROWN_JUDGMENT"), "hp": (540.0 if allow_multi else 980.0) * hp_scale, "color": secondary, "bonus": 120000, "pattern": &"crown_judgment", "subtitle": tr("ENDLESS_P2_SUB"), "mood": "angry", "motif": "crown", "quote": tr("ENDLESS_P2_QUOTE")}
 		]
 	}
 
@@ -723,7 +731,7 @@ func _update_endless_mode(delta: float) -> void:
 	if spawns_done and enemies.is_empty() and _active_boss_count() == 0:
 		endless_clear_grace -= delta
 		if endless_clear_grace <= 0.0 and reward_options.is_empty() and state == GameState.PLAYING:
-			offer_wave_reward("无尽波次奖励", "第 %d 波结束，敌人会继续增强。" % endless_wave)
+			offer_wave_reward(tr("REWARD_ENDLESS_TITLE"), tr("REWARD_ENDLESS_SUB") % endless_wave)
 
 func get_extended_playfield_rect(margin: float) -> Rect2:
 	return Rect2(playfield_rect.position - Vector2.ONE * margin, playfield_rect.size + Vector2.ONE * margin * 2.0)
@@ -771,7 +779,7 @@ func get_difficulty_key() -> String:
 	return str(get_difficulty_config().get("key", "normal"))
 
 func get_difficulty_label() -> String:
-	return str(get_difficulty_config().get("label", "普通"))
+	return tr(str(get_difficulty_config().get("label", "DIFF_NORMAL")))
 
 func get_difficulty_rank() -> int:
 	return int(get_difficulty_config().get("boss_density", 0))
@@ -779,27 +787,47 @@ func get_difficulty_rank() -> int:
 func get_difficulty_labels() -> Array:
 	var labels: Array = []
 	for config in DIFFICULTIES:
-		labels.append(str(config.get("label", "")))
+		labels.append(tr(str(config.get("label", ""))))
 	return labels
 
 func get_ship_config() -> Dictionary:
 	return PLAYER_SHIPS[clamp(ship_index, 0, PLAYER_SHIPS.size() - 1)]
 
 func get_ship_label() -> String:
-	return str(get_ship_config().get("label", "灵枢型"))
+	return tr(str(get_ship_config().get("label", "SHIP_SPIRIT")))
 
 func get_ship_description() -> String:
-	return str(get_ship_config().get("description", ""))
+	return tr(str(get_ship_config().get("description", "")))
 
 func _menu_mode_label() -> String:
 	if menu_mode_index == 1 and endless_unlocked:
-		return "无尽模式"
-	return "剧情模式"
+		return tr("MODE_ENDLESS")
+	return tr("MODE_STORY")
 
 func _menu_mode_description() -> String:
 	if menu_mode_index == 1:
-		return "连续挑战无限波次。每轮奖励后敌人继续变强，甚至会出现双 Boss。"
-	return "按顺序挑战五个关卡，通向完整结局。"
+		return tr("MODE_ENDLESS_DESC")
+	return tr("MODE_STORY_DESC")
+
+func _toggle_language() -> void:
+	if state != GameState.MENU:
+		return
+	I18n.toggle_locale()
+	hud.show_title(best_score, get_difficulty_labels(), difficulty_index, get_ship_label(), get_ship_description(), _menu_mode_label(), _menu_mode_description(), _endless_board_title(), _endless_board_text())
+	audio.play_confirm()
+	_update_hud()
+
+func _ship_key_for(value: String) -> String:
+	return str(I18n.find_entry(PLAYER_SHIPS, value).get("key", "spirit"))
+
+func _ship_label_for(value: String) -> String:
+	return tr(str(I18n.find_entry(PLAYER_SHIPS, value).get("label", "SHIP_SPIRIT")))
+
+func _difficulty_key_for(value: String) -> String:
+	return str(I18n.find_entry(DIFFICULTIES, value).get("key", "normal"))
+
+func _difficulty_label_for(value: String) -> String:
+	return tr(str(I18n.find_entry(DIFFICULTIES, value).get("label", "DIFF_NORMAL")))
 
 func _cycle_menu_mode() -> void:
 	menu_mode_index = 1 - menu_mode_index
@@ -813,8 +841,8 @@ func _record_endless_result() -> void:
 	endless_leaderboard.append({
 		"wave": endless_wave,
 		"score": score,
-		"difficulty": get_difficulty_label(),
-		"ship": get_ship_label(),
+		"difficulty": get_difficulty_key(),
+		"ship": str(get_ship_config().get("key", "spirit")),
 		"time": int(round(endless_run_time))
 	})
 	endless_leaderboard.sort_custom(Callable(self, "_sort_endless_records"))
@@ -847,11 +875,11 @@ func _reward_rarity(reward_id: String) -> String:
 func _reward_rarity_label(rarity: String) -> String:
 	match rarity:
 		"epic":
-			return "史诗"
+			return tr("RARITY_EPIC")
 		"rare":
-			return "稀有"
+			return tr("RARITY_RARE")
 		_:
-			return "普通"
+			return tr("RARITY_COMMON")
 
 func _reward_rarity_color(rarity: String) -> Color:
 	match rarity:
@@ -925,26 +953,26 @@ func _describe_reward_option(reward_id: String) -> Dictionary:
 	var rarity_color: Color = _reward_rarity_color(rarity)
 	match reward_id:
 		"power_cache":
-			return {"id": reward_id, "label": "聚能储备", "description": "立即获得 +18 Power。", "detail": "当前 %d / %d" % [int(power), int(MAX_POWER)], "rarity": rarity, "rarity_label": rarity_label, "rarity_color": rarity_color, "accent_color": Color(1.0, 0.82, 0.48)}
+			return {"id": reward_id, "label": tr("REWARD_POWER_CACHE"), "description": tr("REWARD_POWER_CACHE_DESC"), "detail": tr("REWARD_POWER_CACHE_DETAIL") % [int(power), int(MAX_POWER)], "rarity": rarity, "rarity_label": rarity_label, "rarity_color": rarity_color, "accent_color": Color(1.0, 0.82, 0.48)}
 		"rapid_trigger":
-			return {"id": reward_id, "label": "急速扭机", "description": "射速提升 8%。", "detail": "射击间隔 %.3f 秒 -> %.3f 秒" % [get_player_shot_interval(), max(0.045, get_player_shot_interval() * 0.92)], "rarity": rarity, "rarity_label": rarity_label, "rarity_color": rarity_color, "accent_color": Color(0.62, 0.96, 1.0)}
+			return {"id": reward_id, "label": tr("REWARD_RAPID_TRIGGER"), "description": tr("REWARD_RAPID_TRIGGER_DESC"), "detail": tr("REWARD_RAPID_TRIGGER_DETAIL") % [get_player_shot_interval(), max(0.045, get_player_shot_interval() * 0.92)], "rarity": rarity, "rarity_label": rarity_label, "rarity_color": rarity_color, "accent_color": Color(0.62, 0.96, 1.0)}
 		"overclock":
-			return {"id": reward_id, "label": "超频火力", "description": "玩家子弹伤害提升 12%。", "detail": "伤害倍率 x%.2f -> x%.2f" % [player_damage_multiplier, min(2.6, player_damage_multiplier + 0.12)], "rarity": rarity, "rarity_label": rarity_label, "rarity_color": rarity_color, "accent_color": Color(1.0, 0.62, 0.68)}
+			return {"id": reward_id, "label": tr("REWARD_OVERCLOCK"), "description": tr("REWARD_OVERCLOCK_DESC"), "detail": tr("REWARD_OVERCLOCK_DETAIL") % [player_damage_multiplier, min(2.6, player_damage_multiplier + 0.12)], "rarity": rarity, "rarity_label": rarity_label, "rarity_color": rarity_color, "accent_color": Color(1.0, 0.62, 0.68)}
 		"drone_array":
-			return {"id": reward_id, "label": "僚机阵列", "description": "后续火力档位额外获得 1 个支援机位。", "detail": "僚机数量 %d -> %d" % [get_player_total_option_count(), min(MAX_PLAYER_OPTIONS, get_player_total_option_count() + 1)], "rarity": rarity, "rarity_label": rarity_label, "rarity_color": rarity_color, "accent_color": Color(0.92, 0.72, 1.0)}
+			return {"id": reward_id, "label": tr("REWARD_DRONE_ARRAY"), "description": tr("REWARD_DRONE_ARRAY_DESC"), "detail": tr("REWARD_DRONE_ARRAY_DETAIL") % [get_player_total_option_count(), min(MAX_PLAYER_OPTIONS, get_player_total_option_count() + 1)], "rarity": rarity, "rarity_label": rarity_label, "rarity_color": rarity_color, "accent_color": Color(0.92, 0.72, 1.0)}
 		"bomb_stock":
-			return {"id": reward_id, "label": "灵击储备", "description": "额外获得 1 个灵击，并补强翻盘能力。", "detail": "灵击数 %d -> %d" % [bombs, min(6, bombs + 1)], "rarity": rarity, "rarity_label": rarity_label, "rarity_color": rarity_color, "accent_color": Color(1.0, 0.84, 0.6)}
+			return {"id": reward_id, "label": tr("REWARD_BOMB_STOCK"), "description": tr("REWARD_BOMB_STOCK_DESC"), "detail": tr("REWARD_BOMB_STOCK_DETAIL") % [bombs, min(6, bombs + 1)], "rarity": rarity, "rarity_label": rarity_label, "rarity_color": rarity_color, "accent_color": Color(1.0, 0.84, 0.6)}
 		"vital_core":
-			return {"id": reward_id, "label": "生命核心", "description": "额外获得 1 条命；若已接近满命则改为分数奖励。", "detail": "残机数 %d -> %d" % [lives, min(6, lives + 1)], "rarity": rarity, "rarity_label": rarity_label, "rarity_color": rarity_color, "accent_color": Color(0.78, 1.0, 0.82)}
+			return {"id": reward_id, "label": tr("REWARD_VITAL_CORE"), "description": tr("REWARD_VITAL_CORE_DESC"), "detail": tr("REWARD_VITAL_CORE_DETAIL") % [lives, min(6, lives + 1)], "rarity": rarity, "rarity_label": rarity_label, "rarity_color": rarity_color, "accent_color": Color(0.78, 1.0, 0.82)}
 		"magnet_field":
-			return {"id": reward_id, "label": "磁吸领域", "description": "扩大道具吸附范围与自动回收线。", "detail": "磁吸范围 %.0f -> %.0f" % [pickup_magnet_bonus, min(180.0, pickup_magnet_bonus + 36.0)], "rarity": rarity, "rarity_label": rarity_label, "rarity_color": rarity_color, "accent_color": Color(0.56, 0.96, 1.0)}
+			return {"id": reward_id, "label": tr("REWARD_MAGNET_FIELD"), "description": tr("REWARD_MAGNET_FIELD_DESC"), "detail": tr("REWARD_MAGNET_FIELD_DETAIL") % [pickup_magnet_bonus, min(180.0, pickup_magnet_bonus + 36.0)], "rarity": rarity, "rarity_label": rarity_label, "rarity_color": rarity_color, "accent_color": Color(0.56, 0.96, 1.0)}
 		"graze_drive":
-			return {"id": reward_id, "label": "擦弹驱动", "description": "提升擦弹与道具结算的分数收益。", "detail": "收益倍率 x%.2f -> x%.2f" % [reward_score_bonus_multiplier, min(2.5, reward_score_bonus_multiplier + 0.18)], "rarity": rarity, "rarity_label": rarity_label, "rarity_color": rarity_color, "accent_color": Color(0.74, 0.94, 1.0)}
+			return {"id": reward_id, "label": tr("REWARD_GRAZE_DRIVE"), "description": tr("REWARD_GRAZE_DRIVE_DESC"), "detail": tr("REWARD_GRAZE_DRIVE_DETAIL") % [reward_score_bonus_multiplier, min(2.5, reward_score_bonus_multiplier + 0.18)], "rarity": rarity, "rarity_label": rarity_label, "rarity_color": rarity_color, "accent_color": Color(0.74, 0.94, 1.0)}
 		"resonance_core":
-			return {"id": reward_id, "label": "共振核心", "description": "获得 +12 Power、+6% 射速与 +8% 伤害。", "detail": "全方位进攻型史诗强化。", "rarity": rarity, "rarity_label": rarity_label, "rarity_color": rarity_color, "accent_color": Color(1.0, 0.74, 0.52)}
+			return {"id": reward_id, "label": tr("REWARD_RESONANCE_CORE"), "description": tr("REWARD_RESONANCE_CORE_DESC"), "detail": tr("REWARD_RESONANCE_CORE_DETAIL"), "rarity": rarity, "rarity_label": rarity_label, "rarity_color": rarity_color, "accent_color": Color(1.0, 0.74, 0.52)}
 		"phoenix_drive":
-			return {"id": reward_id, "label": "凤凰驱动", "description": "获得 +1 命、+1 灵击；若已接近上限则转为大量分数。", "detail": "高压环境下的保命型史诗强化。", "rarity": rarity, "rarity_label": rarity_label, "rarity_color": rarity_color, "accent_color": Color(1.0, 0.64, 0.7)}
-	return {"id": reward_id, "label": "补给", "description": "+10 Power。", "detail": "默认补给奖励。", "rarity": "common", "rarity_label": "普通", "rarity_color": Color(0.62, 0.96, 1.0), "accent_color": Color(0.76, 0.92, 1.0)}
+			return {"id": reward_id, "label": tr("REWARD_PHOENIX_DRIVE"), "description": tr("REWARD_PHOENIX_DRIVE_DESC"), "detail": tr("REWARD_PHOENIX_DRIVE_DETAIL"), "rarity": rarity, "rarity_label": rarity_label, "rarity_color": rarity_color, "accent_color": Color(1.0, 0.64, 0.7)}
+	return {"id": reward_id, "label": tr("REWARD_SUPPLY"), "description": tr("REWARD_SUPPLY_DESC"), "detail": tr("REWARD_SUPPLY_DETAIL"), "rarity": "common", "rarity_label": tr("RARITY_COMMON"), "rarity_color": Color(0.62, 0.96, 1.0), "accent_color": Color(0.76, 0.92, 1.0)}
 
 func offer_wave_reward(title: String, subtitle: String) -> void:
 	if state != GameState.PLAYING:
@@ -993,7 +1021,7 @@ func _confirm_reward_selection() -> void:
 		return
 	var option: Dictionary = reward_options[reward_index]
 	_apply_reward_option(option)
-	show_banner("获得奖励", str(option.get("label", "强化")))
+	show_banner(tr("BANNER_REWARD_ACQUIRED"), str(option.get("label", tr("UI_UPGRADE"))))
 	background.trigger_pulse(option.get("accent_color", Color(0.76, 0.92, 1.0)), 0.22, 0.32)
 	hud.hide_overlay()
 	reward_options.clear()
@@ -1187,7 +1215,7 @@ func spawn_boss(config := {}) -> void:
 	var boss_config: Dictionary = _scaled_boss_config(config)
 	if current_boss_config.is_empty() or not allow_multi:
 		current_boss_config = boss_config.duplicate(true)
-	show_banner(str(boss_config.get("name", "首领逼近")), str(boss_config.get("subtitle", "")))
+	show_banner(str(boss_config.get("name", tr("BANNER_BOSS_APPROACH"))), str(boss_config.get("subtitle", "")))
 	var new_boss = BossScript.new().setup(self, boss_config)
 	enemy_layer.add_child(new_boss)
 	background.trigger_pulse(boss_config.get("accent_color", Color(1.0, 0.84, 0.6)), 0.32, 0.65)
@@ -1528,18 +1556,18 @@ func _finish_dialogue() -> void:
 	state = dialogue_resume_state
 
 func on_boss_phase_changed(phase_name: String, current_hp: float, max_hp_value: float) -> void:
-	hud.set_boss_state(true, current_hp, max_hp_value, phase_name)
+	hud.set_boss_state(true, current_hp, max_hp_value, tr("UI_PHASE_BREAK") if phase_name == "Phase Break" else phase_name)
 	if phase_name != "Phase Break":
 		var spotlight_config: Dictionary = _boss_spotlight_config(phase_name)
 		var pulse_color: Color = spotlight_config.get("accent_color", Color(1.0, 0.82, 0.52))
-		show_banner(phase_name, str(spotlight_config.get("subtitle", "小心阅读弹流间的空隙")))
+		show_banner(phase_name, str(spotlight_config.get("subtitle", tr("BANNER_PHASE_HINT"))))
 		hud.flash(pulse_color, 0.32, 0.26)
 		background.trigger_pulse(pulse_color, 0.18, 0.26)
 		hud.show_boss_spotlight(spotlight_config, 2.15 if phase_name.begins_with("Last Spell") else 1.75)
 		audio.play_phase_break()
 
 func on_boss_phase_cleared(phase_name: String) -> void:
-	show_banner("符卡击破", phase_name)
+	show_banner(tr("BANNER_SPELL_BREAK"), phase_name)
 	hud.flash(Color(1.0, 0.88, 0.52), 0.5, 0.35)
 	background.trigger_pulse(Color(1.0, 0.84, 0.56), 0.24, 0.42)
 	shake_screen(0.5, 9.0)
@@ -1560,12 +1588,12 @@ func on_boss_defeated(defeated_boss = null) -> void:
 				continue
 			remaining_bosses += 1
 		if remaining_bosses <= 0:
-			show_banner("Boss 全灭", "准备迎接下一轮波次")
+			show_banner(tr("BANNER_ALL_BOSSES_DOWN"), tr("BANNER_ALL_BOSSES_DOWN_SUB"))
 		return
 	if current_stage < FINAL_STAGE:
 		_start_stage_transition()
 	else:
-		show_banner("全部通关", "你突破了最后的边界")
+		show_banner(tr("BANNER_ALL_CLEAR"), tr("BANNER_ALL_CLEAR_SUB"))
 		finish_run(true)
 
 func _start_stage_transition() -> void:
@@ -1581,7 +1609,7 @@ func _start_stage_transition() -> void:
 	var next_director = StageDirectorScript.new().setup(pending_stage, get_difficulty_key())
 	var stage_info: Dictionary = next_director.get_stage_info()
 	hud.show_stage_transition(pending_stage, stage_info.get("title", "Next Stage"), stage_info.get("subtitle", ""))
-	show_banner("第 %d 关结束" % current_stage, "短暂整备后进入下一关")
+	show_banner(tr("BANNER_STAGE_END") % current_stage, tr("BANNER_STAGE_END_SUB"))
 	background.trigger_pulse(stage_info.get("accent_color", Color(1.0, 1.0, 1.0)), 0.28, 0.6)
 	audio.play_stage_transition()
 
@@ -1594,7 +1622,7 @@ func _update_hud() -> void:
 		"power": int(power),
 		"power_max": int(MAX_POWER),
 		"graze": graze,
-		"stage_text": ("无尽 第 %d 波  x%.2f" % [endless_wave, endless_score_multiplier]) if endless_mode_active else ("第 %d / %d 关" % [current_stage, FINAL_STAGE]),
+		"stage_text": (tr("HUD_ENDLESS_STAGE") % [endless_wave, endless_score_multiplier]) if endless_mode_active else (tr("HUD_STAGE_PROGRESS") % [current_stage, FINAL_STAGE]),
 		"state_text": _state_text()
 	})
 	if state == GameState.MENU:
@@ -1608,21 +1636,21 @@ func _update_hud() -> void:
 func _state_text() -> String:
 	match state:
 		GameState.MENU:
-			return "标题"
+			return tr("STATE_TITLE")
 		GameState.DIALOGUE:
-			return "对话"
+			return tr("STATE_DIALOGUE")
 		GameState.REWARD:
-			return "奖励"
+			return tr("STATE_REWARD")
 		GameState.PLAYING:
-			return "战斗∞" if infinite_lives_cheat else "战斗"
+			return tr("STATE_BATTLE_CHEAT") if infinite_lives_cheat else tr("STATE_BATTLE")
 		GameState.TRANSITION:
-			return "过渡"
+			return tr("STATE_TRANSITION")
 		GameState.PAUSED:
-			return "暂停"
+			return tr("STATE_PAUSED")
 		GameState.GAME_OVER:
-			return "游戏结束"
+			return tr("UI_GAME_OVER")
 		GameState.VICTORY:
-			return "通关"
+			return tr("UI_ALL_CLEAR")
 	return ""
 
 func _load_best_score() -> void:
@@ -1667,8 +1695,8 @@ func _normalize_endless_leaderboard(raw_value) -> Array:
 			normalized.append({
 				"wave": max(0, int(entry.get("wave", 0))),
 				"score": max(0, int(entry.get("score", 0))),
-				"difficulty": str(entry.get("difficulty", "普通")),
-				"ship": str(entry.get("ship", "灵枢型")),
+				"difficulty": _difficulty_key_for(str(entry.get("difficulty", "normal"))),
+				"ship": _ship_key_for(str(entry.get("ship", "spirit"))),
 				"time": max(0, int(entry.get("time", 0))),
 			})
 	normalized.sort_custom(Callable(self, "_sort_endless_records"))

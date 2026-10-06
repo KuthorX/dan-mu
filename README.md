@@ -12,6 +12,13 @@
 - 程序化背景、程序化子弹/敌机/特效绘制
 - **程序化音效与 BGM**，无外部音频资源依赖
 
+## 语言 / Language
+
+- 支持 **简体中文** 与 **English**。首次启动按系统语言自动选择（中文系统为中文，其余为英文）。
+- 在标题界面按 `L` 或点击右上角的 `中文 / EN` 按钮切换语言，选择会保存在 `user://settings.cfg`。
+- 文案位于 `i18n/translations.csv`（`keys,zh,en`），脚本中通过 `tr()` 引用。
+- Supports Simplified Chinese and English. Press `L` (or click `中文 / EN`) on the title screen to switch; the choice is remembered.
+
 ## 操作
 
 - `WASD / 方向键`：移动
@@ -41,6 +48,8 @@
 - `scripts/effect.gd`：爆炸、冲击波、火花特效
 - `scripts/audio_manager.gd`：程序化 BGM 与音效
 - `scripts/pickup.gd`：点数/火力道具
+- `scripts/i18n.gd`：语言选择、切换与保存
+- `i18n/translations.csv`：中英文翻译表
 
 ## 说明
 

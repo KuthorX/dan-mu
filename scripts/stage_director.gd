@@ -50,7 +50,7 @@ func _trigger_event(game, event: Dictionary) -> void:
 		"dialogue":
 			game.start_dialogue(event.get("scene", {}))
 		"reward":
-			game.offer_wave_reward(event.get("title", "波次奖励"), event.get("subtitle", ""))
+			game.offer_wave_reward(event.get("title", tr("REWARD_WAVE")), event.get("subtitle", ""))
 
 func _push_banner(time: float, title: String, subtitle := "") -> void:
 	events.append({"time": time, "type": "banner", "title": title, "subtitle": subtitle})
@@ -85,12 +85,12 @@ func _build_events() -> void:
 	events.sort_custom(Callable(self, "_sort_events_by_time"))
 
 func _build_stage_one() -> void:
-	stage_title = "第一关 · 星光边界"
-	stage_subtitle = "穿过霓虹星海的试炼"
+	stage_title = tr("S1_TITLE")
+	stage_subtitle = tr("S1_SUBTITLE")
 	accent_color = Color(0.54, 0.92, 1.0)
 	boss_config = {
-		"name": "边界守望者 · 星界秘主",
-		"subtitle": "星界边缘的守望者",
+		"name": tr("S1_BOSS_NAME"),
+		"subtitle": tr("S1_BOSS_SUB"),
 		"radius": 34.0,
 		"accent_color": Color(1.0, 0.84, 0.54),
 		"secondary_color": Color(0.56, 0.92, 1.0),
@@ -98,10 +98,10 @@ func _build_stage_one() -> void:
 		"mood": "calm",
 		"motif": "halo",
 		"phases": [
-			{"name": "Nonspell · Scarlet Spiral", "hp": 420.0, "color": Color(1.0, 0.45, 0.68), "bonus": 40000, "pattern": &"scarlet_spiral", "subtitle": "试探性的星屑螺旋", "mood": "calm", "motif": "halo", "quote": "先试着跟上我的星轨吧。"},
-			{"name": "Spell · Moon Petal Cage", "hp": 560.0, "color": Color(0.58, 0.95, 1.0), "bonus": 70000, "pattern": &"moon_petals", "subtitle": "月瓣收束的包围阵", "mood": "soft", "motif": "ribbon", "quote": "月色会替我关上退路。"},
-			{"name": "Spell · Prism Cascade", "hp": 700.0, "color": Color(0.76, 0.62, 1.0), "bonus": 100000, "pattern": &"prism_cascade", "subtitle": "折射层层堆叠的星雨", "mood": "soft", "motif": "crown", "quote": "每一道折光，都会成为新的边界。"},
-			{"name": "Last Spell · Falling Star Border", "hp": 860.0, "color": Color(1.0, 0.88, 0.46), "bonus": 150000, "pattern": &"falling_star", "subtitle": "坠星边界的最终压制", "mood": "angry", "motif": "crown", "quote": "把你的退路与天穹一起压碎。"}
+			{"name": "Nonspell · Scarlet Spiral", "hp": 420.0, "color": Color(1.0, 0.45, 0.68), "bonus": 40000, "pattern": &"scarlet_spiral", "subtitle": tr("S1_P1_SUB"), "mood": "calm", "motif": "halo", "quote": tr("S1_P1_QUOTE")},
+			{"name": "Spell · Moon Petal Cage", "hp": 560.0, "color": Color(0.58, 0.95, 1.0), "bonus": 70000, "pattern": &"moon_petals", "subtitle": tr("S1_P2_SUB"), "mood": "soft", "motif": "ribbon", "quote": tr("S1_P2_QUOTE")},
+			{"name": "Spell · Prism Cascade", "hp": 700.0, "color": Color(0.76, 0.62, 1.0), "bonus": 100000, "pattern": &"prism_cascade", "subtitle": tr("S1_P3_SUB"), "mood": "soft", "motif": "crown", "quote": tr("S1_P3_QUOTE")},
+			{"name": "Last Spell · Falling Star Border", "hp": 860.0, "color": Color(1.0, 0.88, 0.46), "bonus": 150000, "pattern": &"falling_star", "subtitle": tr("S1_P4_SUB"), "mood": "angry", "motif": "crown", "quote": tr("S1_P4_QUOTE")}
 		]
 	}
 	_push_banner(0.3, stage_title, stage_subtitle)
@@ -166,8 +166,8 @@ func _build_stage_one() -> void:
 				"score": 1350,
 				"point_drops": 2
 			})
-	_push_banner(13.0, "中段压制", "弹幕密度开始上升")
-	_push_reward(12.1, "波次奖励", "开场波次已突破——选择一项加护。")
+	_push_banner(13.0, tr("S1_BANNER_1"), tr("S1_BANNER_1_SUB"))
+	_push_reward(12.1, tr("REWARD_WAVE"), tr("S1_REWARD_1"))
 	for spinner_index in range(3):
 		var center_x: float = 160.0 + float(spinner_index) * 110.0
 		_push_enemy(14.2 + float(spinner_index) * 1.1, {
@@ -257,8 +257,8 @@ func _build_stage_one() -> void:
 			"point_drops": 3,
 			"power_drops": 2
 		})
-	_push_banner(31.2, "压制升级", "交错波次与环形弹同步出现")
-	_push_reward(30.4, "波次奖励", "星轨战线已稳住——挑选你的下一项成长。")
+	_push_banner(31.2, tr("S1_BANNER_2"), tr("S1_BANNER_2_SUB"))
+	_push_reward(30.4, tr("REWARD_WAVE"), tr("S1_REWARD_2"))
 	for dense_index in range(5):
 		var dense_time: float = 32.0 + float(dense_index) * 0.55
 		_push_enemy(dense_time, {
@@ -293,7 +293,7 @@ func _build_stage_one() -> void:
 			"score": 1700,
 			"point_drops": 2
 		})
-	_push_reward(41.0, "波次奖励", "高压波次已清空——领取一项强化。")
+	_push_reward(41.0, tr("REWARD_WAVE"), tr("S1_REWARD_3"))
 	for preboss_index in range(2):
 		_push_enemy(39.2 + float(preboss_index) * 1.3, {
 			"name": "spinner",
@@ -337,21 +337,21 @@ func _build_stage_one() -> void:
 			"right": {"accent_color": boss_config["accent_color"], "secondary_color": boss_config["secondary_color"], "side": "right", "mood": boss_config["mood"], "motif": boss_config["motif"]}
 		},
 		"lines": [
-			{"speaker": "洛天依", "side": "left", "speaker_color": Color(1.0, 0.88, 0.72), "portrait_update": {"mood": "calm", "motif": "ribbon"}, "text": "这片边界的星光有点太吵了……你就是在操纵这场弹幕的人？"},
-			{"speaker": "星界秘主", "side": "right", "speaker_color": boss_config["accent_color"], "portrait_update": {"mood": "soft", "motif": "halo"}, "text": "访客啊，若想穿过星界边缘，就用你的轨迹证明自己。"},
-			{"speaker": "洛天依", "side": "left", "speaker_color": Color(1.0, 0.88, 0.72), "portrait_update": {"mood": "angry", "motif": "ribbon"}, "text": "那我就不客气了。先把你的符卡拆开，再去下一层。"}
+			{"speaker": tr("SPEAKER_LUO_TIANYI"), "side": "left", "speaker_color": Color(1.0, 0.88, 0.72), "portrait_update": {"mood": "calm", "motif": "ribbon"}, "text": tr("S1_LINE_1")},
+			{"speaker": tr("S1_SPEAKER_BOSS"), "side": "right", "speaker_color": boss_config["accent_color"], "portrait_update": {"mood": "soft", "motif": "halo"}, "text": tr("S1_LINE_2")},
+			{"speaker": tr("SPEAKER_LUO_TIANYI"), "side": "left", "speaker_color": Color(1.0, 0.88, 0.72), "portrait_update": {"mood": "angry", "motif": "ribbon"}, "text": tr("S1_LINE_3")}
 		]
 	})
-	_push_banner(46.4, "首领逼近", boss_config["name"])
+	_push_banner(46.4, tr("BANNER_BOSS_APPROACH"), boss_config["name"])
 	_push_boss(48.6, boss_config)
 
 func _build_stage_two() -> void:
-	stage_title = "第二关 · 极光熔炉"
-	stage_subtitle = "穿行熔色极光与磁暴回廊"
+	stage_title = tr("S2_TITLE")
+	stage_subtitle = tr("S2_SUBTITLE")
 	accent_color = Color(1.0, 0.68, 0.42)
 	boss_config = {
-		"name": "熔炉守卫 · 炼狱魔王",
-		"subtitle": "磁暴边界的熔炉守卫",
+		"name": tr("S2_BOSS_NAME"),
+		"subtitle": tr("S2_BOSS_SUB"),
 		"radius": 38.0,
 		"accent_color": Color(1.0, 0.74, 0.42),
 		"secondary_color": Color(0.58, 0.96, 1.0),
@@ -359,10 +359,10 @@ func _build_stage_two() -> void:
 		"mood": "angry",
 		"motif": "gear",
 		"phases": [
-			{"name": "Nonspell · Magnetic Bloom", "hp": 540.0, "color": Color(1.0, 0.64, 0.42), "bonus": 70000, "pattern": &"magnetic_bloom", "subtitle": "磁化花阵的压迫试探", "mood": "angry", "motif": "gear", "quote": "炉心才刚刚升温。"},
-			{"name": "Spell · Aurora Lattice", "hp": 720.0, "color": Color(0.48, 0.94, 1.0), "bonus": 110000, "pattern": &"aurora_lattice", "subtitle": "极光格构封锁回廊", "mood": "calm", "motif": "halo", "quote": "极光会把你的每一步都记录下来。"},
-			{"name": "Spell · Comet Refinery", "hp": 880.0, "color": Color(0.86, 0.56, 1.0), "bonus": 150000, "pattern": &"comet_refinery", "subtitle": "彗星熔炼的高速压线", "mood": "angry", "motif": "gear", "quote": "把星火压进熔炉，再让它们全部向你倾倒。"},
-			{"name": "Last Spell · Boundary Collapse Furnace", "hp": 1080.0, "color": Color(1.0, 0.88, 0.52), "bonus": 220000, "pattern": &"boundary_collapse", "subtitle": "边界坍缩前的最终熔断", "mood": "angry", "motif": "crown", "quote": "边界一旦塌陷，就连回旋的余地也不会留下。"}
+			{"name": "Nonspell · Magnetic Bloom", "hp": 540.0, "color": Color(1.0, 0.64, 0.42), "bonus": 70000, "pattern": &"magnetic_bloom", "subtitle": tr("S2_P1_SUB"), "mood": "angry", "motif": "gear", "quote": tr("S2_P1_QUOTE")},
+			{"name": "Spell · Aurora Lattice", "hp": 720.0, "color": Color(0.48, 0.94, 1.0), "bonus": 110000, "pattern": &"aurora_lattice", "subtitle": tr("S2_P2_SUB"), "mood": "calm", "motif": "halo", "quote": tr("S2_P2_QUOTE")},
+			{"name": "Spell · Comet Refinery", "hp": 880.0, "color": Color(0.86, 0.56, 1.0), "bonus": 150000, "pattern": &"comet_refinery", "subtitle": tr("S2_P3_SUB"), "mood": "angry", "motif": "gear", "quote": tr("S2_P3_QUOTE")},
+			{"name": "Last Spell · Boundary Collapse Furnace", "hp": 1080.0, "color": Color(1.0, 0.88, 0.52), "bonus": 220000, "pattern": &"boundary_collapse", "subtitle": tr("S2_P4_SUB"), "mood": "angry", "motif": "crown", "quote": tr("S2_P4_QUOTE")}
 		]
 	}
 	_push_banner(0.3, stage_title, stage_subtitle)
@@ -422,8 +422,8 @@ func _build_stage_two() -> void:
 			"score": 1800,
 			"point_drops": 2
 		})
-	_push_banner(13.5, "极光织幕", "曲线弹与纵向幕墙开始叠加")
-	_push_reward(12.9, "波次奖励", "极光遭遇战已结束——选择一项强化。")
+	_push_banner(13.5, tr("S2_BANNER_1"), tr("S2_BANNER_1_SUB"))
+	_push_reward(12.9, tr("REWARD_WAVE"), tr("S2_REWARD_1"))
 	for guardian_index in range(3):
 		var guardian_x: float = 132.0 + float(guardian_index) * 148.0
 		_push_enemy(14.8 + float(guardian_index) * 1.3, {
@@ -491,8 +491,8 @@ func _build_stage_two() -> void:
 			"point_drops": 3,
 			"power_drops": 2
 		})
-	_push_banner(33.5, "压制激增", "磁暴幕墙开始与旋转花瓣交错")
-	_push_reward(32.8, "波次奖励", "熔炉战线已击穿——选择你的下一项优势。")
+	_push_banner(33.5, tr("S2_BANNER_2"), tr("S2_BANNER_2_SUB"))
+	_push_reward(32.8, tr("REWARD_WAVE"), tr("S2_REWARD_2"))
 	for sentinel_index in range(4):
 		var sentinel_time: float = 33.9 + float(sentinel_index) * 0.52
 		var sentinel_x: float = 88.0 + float(sentinel_index) * 132.0
@@ -547,7 +547,7 @@ func _build_stage_two() -> void:
 			"score": 1900,
 			"point_drops": 2
 		})
-	_push_reward(41.5, "波次奖励", "风暴格阵已粉碎——收下一项奖励。")
+	_push_reward(41.5, tr("REWARD_WAVE"), tr("S2_REWARD_3"))
 	for preboss in range(3):
 		_push_enemy(41.6 + float(preboss) * 1.0, {
 			"name": "guardian",
@@ -576,21 +576,21 @@ func _build_stage_two() -> void:
 			"right": {"accent_color": boss_config["accent_color"], "secondary_color": boss_config["secondary_color"], "side": "right", "mood": boss_config["mood"], "motif": boss_config["motif"]}
 		},
 		"lines": [
-			{"speaker": "洛天依", "side": "left", "speaker_color": Color(1.0, 0.88, 0.72), "portrait_update": {"mood": "soft", "motif": "ribbon"}, "text": "极光后面居然是熔炉……难怪第二关的弹幕这么烫。"},
-			{"speaker": "炼狱魔王", "side": "right", "speaker_color": boss_config["accent_color"], "portrait_update": {"mood": "angry", "motif": "gear"}, "text": "能走到这里，已经值得夸奖。但边界坍缩前，你一步也别想再往前。"},
-			{"speaker": "洛天依", "side": "left", "speaker_color": Color(1.0, 0.88, 0.72), "portrait_update": {"mood": "angry", "motif": "ribbon"}, "text": "那就看看是你的炉火更凶，还是我的避弹线更稳。"}
+			{"speaker": tr("SPEAKER_LUO_TIANYI"), "side": "left", "speaker_color": Color(1.0, 0.88, 0.72), "portrait_update": {"mood": "soft", "motif": "ribbon"}, "text": tr("S2_LINE_1")},
+			{"speaker": tr("S2_SPEAKER_BOSS"), "side": "right", "speaker_color": boss_config["accent_color"], "portrait_update": {"mood": "angry", "motif": "gear"}, "text": tr("S2_LINE_2")},
+			{"speaker": tr("SPEAKER_LUO_TIANYI"), "side": "left", "speaker_color": Color(1.0, 0.88, 0.72), "portrait_update": {"mood": "angry", "motif": "ribbon"}, "text": tr("S2_LINE_3")}
 		]
 	})
-	_push_banner(46.2, "首领逼近", boss_config["name"])
+	_push_banner(46.2, tr("BANNER_BOSS_APPROACH"), boss_config["name"])
 	_push_boss(48.8, boss_config)
 
 func _build_stage_three() -> void:
-	stage_title = "第三关 · 残垣之巅"
-	stage_subtitle = "穿过崩塌要塞的边缘，攀上残垣之巅。"
+	stage_title = tr("S3_TITLE")
+	stage_subtitle = tr("S3_SUBTITLE")
 	accent_color = Color(0.72, 0.66, 1.0)
 	boss_config = {
-		"name": "要塞裁定者 · 夜垣向量",
-		"subtitle": "破碎边界王冠的看守者。",
+		"name": tr("S3_BOSS_NAME"),
+		"subtitle": tr("S3_BOSS_SUB"),
 		"radius": 40.0,
 		"accent_color": Color(0.92, 0.62, 1.0),
 		"secondary_color": Color(0.52, 0.96, 1.0),
@@ -598,10 +598,10 @@ func _build_stage_three() -> void:
 		"mood": "angry",
 		"motif": "crown",
 		"phases": [
-			{"name": "非符 · 磁花绽放", "hp": 760.0, "color": Color(1.0, 0.66, 0.48), "bonus": 100000, "pattern": &"magnetic_bloom", "subtitle": "废墟核心绽开，螺旋花瓣层层展开。", "mood": "angry", "motif": "gear", "quote": "你的道路，止于王冠开始之处。"},
-			{"name": "符卡 · 极光格阵", "hp": 980.0, "color": Color(0.52, 0.94, 1.0), "bonus": 150000, "pattern": &"aurora_lattice", "subtitle": "冻结的线条封锁整片天空。", "mood": "calm", "motif": "halo", "quote": "你绘出的每一道回避轨迹，都已落在我的格阵之中。"},
-			{"name": "符卡 · 彗星炼炉", "hp": 1240.0, "color": Color(0.86, 0.58, 1.0), "bonus": 210000, "pattern": &"comet_refinery", "subtitle": "要塞碎片如同锻造群星般倾泻而下。", "mood": "angry", "motif": "gear", "quote": "那就让这片废墟来锤炼你的勇气吧。"},
-			{"name": "终符 · 边界崩塌", "hp": 1540.0, "color": Color(1.0, 0.88, 0.56), "bonus": 320000, "pattern": &"boundary_collapse", "subtitle": "整座堡垒折叠成最后一道压制之墙。", "mood": "angry", "motif": "crown", "quote": "现在，亲眼看着整条边界一同坠落吧。"}
+			{"name": tr("PHASE_MAGNETIC_BLOOM"), "hp": 760.0, "color": Color(1.0, 0.66, 0.48), "bonus": 100000, "pattern": &"magnetic_bloom", "subtitle": tr("S3_P1_SUB"), "mood": "angry", "motif": "gear", "quote": tr("S3_P1_QUOTE")},
+			{"name": tr("PHASE_AURORA_LATTICE"), "hp": 980.0, "color": Color(0.52, 0.94, 1.0), "bonus": 150000, "pattern": &"aurora_lattice", "subtitle": tr("S3_P2_SUB"), "mood": "calm", "motif": "halo", "quote": tr("S3_P2_QUOTE")},
+			{"name": tr("PHASE_COMET_REFINERY"), "hp": 1240.0, "color": Color(0.86, 0.58, 1.0), "bonus": 210000, "pattern": &"comet_refinery", "subtitle": tr("S3_P3_SUB"), "mood": "angry", "motif": "gear", "quote": tr("S3_P3_QUOTE")},
+			{"name": tr("PHASE_BORDER_COLLAPSE"), "hp": 1540.0, "color": Color(1.0, 0.88, 0.56), "bonus": 320000, "pattern": &"boundary_collapse", "subtitle": tr("S3_P4_SUB"), "mood": "angry", "motif": "crown", "quote": tr("S3_P4_QUOTE")}
 		]
 	}
 	_push_banner(0.3, stage_title, stage_subtitle)
@@ -658,8 +658,8 @@ func _build_stage_three() -> void:
 			"score": 1250,
 			"point_drops": 1
 		})
-	_push_reward(9.2, "波次奖励", "外环已突破——选择新的锋芒。")
-	_push_banner(10.0, "废墟轨道", "交叉火力与回旋哨戒开始收束战场。")
+	_push_reward(9.2, tr("REWARD_WAVE"), tr("S3_REWARD_1"))
+	_push_banner(10.0, tr("S3_BANNER_1"), tr("S3_BANNER_1_SUB"))
 	for caster_index in range(4):
 		var caster_time: float = 10.8 + float(caster_index) * 0.86
 		var caster_x: float = 112.0 + float(caster_index) * 120.0
@@ -705,8 +705,8 @@ func _build_stage_three() -> void:
 			"point_drops": 2,
 			"power_drops": 1
 		})
-	_push_reward(18.8, "波次奖励", "轨道战线已稳住——领取新的强化。")
-	_push_banner(19.6, "要塞封锁", "重装守卫将层层环阵刻入通道。")
+	_push_reward(18.8, tr("REWARD_WAVE"), tr("S3_REWARD_2"))
+	_push_banner(19.6, tr("S3_BANNER_2"), tr("S3_BANNER_2_SUB"))
 	for guardian_index in range(4):
 		var guardian_time: float = 20.2 + float(guardian_index) * 1.08
 		var guardian_x: float = 104.0 + float(guardian_index) * 118.0
@@ -750,8 +750,8 @@ func _build_stage_three() -> void:
 			"score": 2100,
 			"point_drops": 2
 		})
-	_push_reward(30.4, "波次奖励", "要塞封锁已破——选择下一项优势。")
-	_push_banner(31.2, "崩流压境", "两翼风暴交错收缩，整条通道被挤压闭合。")
+	_push_reward(30.4, tr("REWARD_WAVE"), tr("S3_REWARD_3"))
+	_push_banner(31.2, tr("S3_BANNER_3"), tr("S3_BANNER_3_SUB"))
 	for storm_index in range(7):
 		var storm_time: float = 31.8 + float(storm_index) * 0.42
 		_push_enemy(storm_time, {
@@ -811,7 +811,7 @@ func _build_stage_three() -> void:
 			"point_drops": 3,
 			"power_drops": 2
 		})
-	_push_reward(41.6, "波次奖励", "最终通道已打通——在 Boss 前收下最后一项加护。")
+	_push_reward(41.6, tr("REWARD_WAVE"), tr("S3_REWARD_4"))
 	for preboss in range(4):
 		_push_enemy(42.2 + float(preboss) * 0.82, {
 			"name": "guardian",
@@ -840,21 +840,21 @@ func _build_stage_three() -> void:
 			"right": {"accent_color": boss_config["accent_color"], "secondary_color": boss_config["secondary_color"], "side": "right", "mood": boss_config["mood"], "motif": boss_config["motif"]}
 		},
 		"lines": [
-			{"speaker": "自机", "side": "left", "speaker_color": Color(1.0, 0.88, 0.72), "portrait_update": {"mood": "angry", "motif": "ribbon"}, "text": "原来这就是边界的顶端……难怪下面的一切都想拦住我。"},
-			{"speaker": "夜垣向量", "side": "right", "speaker_color": boss_config["accent_color"], "portrait_update": {"mood": "angry", "motif": "crown"}, "text": "所有断裂的轨迹，最终都会回归王冠。把你的也展示给我看。"},
-			{"speaker": "自机", "side": "left", "speaker_color": Color(1.0, 0.88, 0.72), "portrait_update": {"mood": "soft", "motif": "ribbon"}, "text": "那我就亲手在整片废墟中劈出一条新路。"}
+			{"speaker": tr("SPEAKER_PILOT"), "side": "left", "speaker_color": Color(1.0, 0.88, 0.72), "portrait_update": {"mood": "angry", "motif": "ribbon"}, "text": tr("S3_LINE_1")},
+			{"speaker": tr("S3_SPEAKER_BOSS"), "side": "right", "speaker_color": boss_config["accent_color"], "portrait_update": {"mood": "angry", "motif": "crown"}, "text": tr("S3_LINE_2")},
+			{"speaker": tr("SPEAKER_PILOT"), "side": "left", "speaker_color": Color(1.0, 0.88, 0.72), "portrait_update": {"mood": "soft", "motif": "ribbon"}, "text": tr("S3_LINE_3")}
 		]
 	})
-	_push_banner(47.6, "首领逼近", boss_config["name"])
+	_push_banner(47.6, tr("BANNER_BOSS_APPROACH"), boss_config["name"])
 	_push_boss(50.0, boss_config)
 
 func _build_stage_four() -> void:
-	stage_title = "第四关 · 蚀冕终庭"
-	stage_subtitle = "攀上边界最终崩塌的王座。"
+	stage_title = tr("S4_TITLE")
+	stage_subtitle = tr("S4_SUBTITLE")
 	accent_color = Color(1.0, 0.64, 0.58)
 	boss_config = {
-		"name": "蚀冕君主 · 星终阿斯特拉",
-		"subtitle": "破碎边界背后的最终意志。",
+		"name": tr("S4_BOSS_NAME"),
+		"subtitle": tr("S4_BOSS_SUB"),
 		"radius": 42.0,
 		"accent_color": Color(1.0, 0.7, 0.56),
 		"secondary_color": Color(0.64, 0.9, 1.0),
@@ -862,10 +862,10 @@ func _build_stage_four() -> void:
 		"mood": "angry",
 		"motif": "crown",
 		"phases": [
-			{"name": "非符 · 棱镜螺旋", "hp": 980.0, "color": Color(1.0, 0.64, 0.56), "bonus": 140000, "pattern": &"scarlet_spiral", "subtitle": "高速镜像环阵覆盖整个中场。", "mood": "angry", "motif": "gear", "quote": "别再向上了，王冠早已选好了属于它的天空。"},
-			{"name": "符卡 · 坠格封天", "hp": 1260.0, "color": Color(0.62, 0.94, 1.0), "bonus": 220000, "pattern": &"aurora_lattice", "subtitle": "幕墙与格线一同封死所有通路。", "mood": "calm", "motif": "halo", "quote": "我会把你以为安全的每条路线全部折断。"},
-			{"name": "符卡 · 冕炉炼星", "hp": 1540.0, "color": Color(0.92, 0.58, 1.0), "bonus": 300000, "pattern": &"comet_refinery", "subtitle": "锻造之星穿过收拢幕面，成排坠落。", "mood": "angry", "motif": "gear", "quote": "那就让你的勇气，在彻底的压迫里被炼成吧。"},
-			{"name": "终符 · 终境崩灭", "hp": 1880.0, "color": Color(1.0, 0.9, 0.58), "bonus": 420000, "pattern": &"boundary_collapse", "subtitle": "王座本身会化作最后一道弹幕之墙轰然坠下。", "mood": "angry", "motif": "crown", "quote": "见证整条边界在最后一次爆发中终结吧。"}
+			{"name": tr("PHASE_PRISM_SPIRAL"), "hp": 980.0, "color": Color(1.0, 0.64, 0.56), "bonus": 140000, "pattern": &"scarlet_spiral", "subtitle": tr("S4_P1_SUB"), "mood": "angry", "motif": "gear", "quote": tr("S4_P1_QUOTE")},
+			{"name": tr("PHASE_FALLING_GRID"), "hp": 1260.0, "color": Color(0.62, 0.94, 1.0), "bonus": 220000, "pattern": &"aurora_lattice", "subtitle": tr("S4_P2_SUB"), "mood": "calm", "motif": "halo", "quote": tr("S4_P2_QUOTE")},
+			{"name": tr("PHASE_CROWN_FORGE"), "hp": 1540.0, "color": Color(0.92, 0.58, 1.0), "bonus": 300000, "pattern": &"comet_refinery", "subtitle": tr("S4_P3_SUB"), "mood": "angry", "motif": "gear", "quote": tr("S4_P3_QUOTE")},
+			{"name": tr("PHASE_ENDLAND_ANNIHILATION"), "hp": 1880.0, "color": Color(1.0, 0.9, 0.58), "bonus": 420000, "pattern": &"boundary_collapse", "subtitle": tr("S4_P4_SUB"), "mood": "angry", "motif": "crown", "quote": tr("S4_P4_QUOTE")}
 		]
 	}
 	_push_banner(0.3, stage_title, stage_subtitle)
@@ -907,8 +907,8 @@ func _build_stage_four() -> void:
 			"score": 2000,
 			"point_drops": 1
 		})
-	_push_reward(8.8, "波次奖励", "外环冕线已碎——选择新的锋芒。")
-	_push_banner(9.6, "镜翼坠阵", "镜像与哨戒一同向内折叠通道。")
+	_push_reward(8.8, tr("REWARD_WAVE"), tr("S4_REWARD_1"))
+	_push_banner(9.6, tr("S4_BANNER_1"), tr("S4_BANNER_1_SUB"))
 	for mirror_index in range(5):
 		var mirror_time: float = 10.4 + float(mirror_index) * 0.62
 		var mirror_x: float = 96.0 + float(mirror_index) * 96.0
@@ -960,8 +960,8 @@ func _build_stage_four() -> void:
 			"point_drops": 2,
 			"power_drops": 1
 		})
-	_push_reward(19.4, "波次奖励", "中层冕路已经打开——挑一项更稀有的强化。")
-	_push_banner(20.2, "收割合唱", "分层弧幕与延迟爆发一同压缩屏幕空间。")
+	_push_reward(19.4, tr("REWARD_WAVE"), tr("S4_REWARD_2"))
+	_push_banner(20.2, tr("S4_BANNER_2"), tr("S4_BANNER_2_SUB"))
 	for choir_index in range(6):
 		var choir_time: float = 20.8 + float(choir_index) * 0.42
 		_push_enemy(choir_time, {
@@ -1005,8 +1005,8 @@ func _build_stage_four() -> void:
 			"point_drops": 3,
 			"power_drops": 1
 		})
-	_push_reward(31.0, "波次奖励", "内环冕面已裂——不妨刷新寻找更强的机会。")
-	_push_banner(31.8, "王座激流", "沉重的侧翼风暴与镜像雷阵同时逼近。")
+	_push_reward(31.0, tr("REWARD_WAVE"), tr("S4_REWARD_3"))
+	_push_banner(31.8, tr("S4_BANNER_3"), tr("S4_BANNER_3_SUB"))
 	for storm_index in range(7):
 		var storm_time: float = 32.4 + float(storm_index) * 0.4
 		_push_enemy(storm_time, {
@@ -1067,28 +1067,28 @@ func _build_stage_four() -> void:
 			"point_drops": 3,
 			"power_drops": 1
 		})
-	_push_reward(43.0, "波次奖励", "王座长廊已开——在终局前收下最后一手强化。")
+	_push_reward(43.0, tr("REWARD_WAVE"), tr("S4_REWARD_4"))
 	_push_dialogue(47.2, {
 		"cast": {
 			"left": {"accent_color": Color(0.82, 0.3, 0.42), "secondary_color": Color(1.0, 0.92, 0.72), "side": "left", "mood": "angry", "motif": "ribbon"},
 			"right": {"accent_color": boss_config["accent_color"], "secondary_color": boss_config["secondary_color"], "side": "right", "mood": boss_config["mood"], "motif": boss_config["motif"]}
 		},
 		"lines": [
-			{"speaker": "自机", "side": "left", "speaker_color": Color(1.0, 0.88, 0.72), "portrait_update": {"mood": "angry", "motif": "ribbon"}, "text": "原来这里就是王冠真正的中心。"},
-			{"speaker": "星终阿斯特拉", "side": "right", "speaker_color": boss_config["accent_color"], "portrait_update": {"mood": "angry", "motif": "crown"}, "text": "你侥幸穿过的每一道轨迹，都只是通向我的走廊。"},
-			{"speaker": "自机", "side": "left", "speaker_color": Color(1.0, 0.88, 0.72), "portrait_update": {"mood": "soft", "motif": "ribbon"}, "text": "那我就用最后一条轨迹，把整座王座一并击碎。"}
+			{"speaker": tr("SPEAKER_PILOT"), "side": "left", "speaker_color": Color(1.0, 0.88, 0.72), "portrait_update": {"mood": "angry", "motif": "ribbon"}, "text": tr("S4_LINE_1")},
+			{"speaker": tr("S4_SPEAKER_BOSS"), "side": "right", "speaker_color": boss_config["accent_color"], "portrait_update": {"mood": "angry", "motif": "crown"}, "text": tr("S4_LINE_2")},
+			{"speaker": tr("SPEAKER_PILOT"), "side": "left", "speaker_color": Color(1.0, 0.88, 0.72), "portrait_update": {"mood": "soft", "motif": "ribbon"}, "text": tr("S4_LINE_3")}
 		]
 	})
-	_push_banner(47.8, "首领逼近", boss_config["name"])
+	_push_banner(47.8, tr("BANNER_BOSS_APPROACH"), boss_config["name"])
 	_push_boss(50.2, boss_config)
 
 func _build_stage_five() -> void:
-	stage_title = "第五关 · 终界天穹"
-	stage_subtitle = "踏入边界尽头，迎战一切轨迹的终点。"
+	stage_title = tr("S5_TITLE")
+	stage_subtitle = tr("S5_SUBTITLE")
 	accent_color = Color(0.96, 0.58, 0.74)
 	boss_config = {
-		"name": "终界裁决者 · 星穹终钥",
-		"subtitle": "守在一切弹道尽头的最终门扉。",
+		"name": tr("S5_BOSS_NAME"),
+		"subtitle": tr("S5_BOSS_SUB"),
 		"radius": 44.0,
 		"accent_color": Color(1.0, 0.68, 0.62),
 		"secondary_color": Color(0.66, 0.94, 1.0),
@@ -1096,10 +1096,10 @@ func _build_stage_five() -> void:
 		"mood": "angry",
 		"motif": "crown",
 		"phases": [
-			{"name": "非符 · 蚀界格轮", "hp": 1260.0, "color": Color(1.0, 0.66, 0.58), "bonus": 180000, "pattern": &"eclipse_lattice", "subtitle": "全屏格轮与边角压线同步推进。", "mood": "angry", "motif": "gear", "quote": "终界之前，任何路线都只会变成囚笼。"},
-			{"name": "符卡 · 王冠裁断", "hp": 1560.0, "color": Color(0.66, 0.96, 1.0), "bonus": 260000, "pattern": &"crown_judgment", "subtitle": "追身收束与高压坠幕同时审判。", "mood": "angry", "motif": "crown", "quote": "你所躲开的，不过是我尚未落下的判决。"},
-			{"name": "符卡 · 边界坍核", "hp": 1880.0, "color": Color(0.92, 0.58, 1.0), "bonus": 360000, "pattern": &"boundary_collapse", "subtitle": "整片场地开始被层层坍缩挤压。", "mood": "angry", "motif": "gear", "quote": "当边界开始收缩，连喘息都会成为奢望。"},
-			{"name": "终符 · 终钥裁天", "hp": 2260.0, "color": Color(1.0, 0.92, 0.62), "bonus": 520000, "pattern": &"crown_judgment", "subtitle": "最终审判覆盖整个天穹，所有空隙尽数闭合。", "mood": "angry", "motif": "crown", "quote": "来吧，在终点前证明你的最后一条轨迹。"}
+			{"name": tr("PHASE_ECLIPSE_LATTICE_WHEEL"), "hp": 1260.0, "color": Color(1.0, 0.66, 0.58), "bonus": 180000, "pattern": &"eclipse_lattice", "subtitle": tr("S5_P1_SUB"), "mood": "angry", "motif": "gear", "quote": tr("S5_P1_QUOTE")},
+			{"name": tr("PHASE_CROWN_JUDGMENT"), "hp": 1560.0, "color": Color(0.66, 0.96, 1.0), "bonus": 260000, "pattern": &"crown_judgment", "subtitle": tr("S5_P2_SUB"), "mood": "angry", "motif": "crown", "quote": tr("S5_P2_QUOTE")},
+			{"name": tr("PHASE_BORDER_CORE_COLLAPSE"), "hp": 1880.0, "color": Color(0.92, 0.58, 1.0), "bonus": 360000, "pattern": &"boundary_collapse", "subtitle": tr("S5_P3_SUB"), "mood": "angry", "motif": "gear", "quote": tr("S5_P3_QUOTE")},
+			{"name": tr("PHASE_KEYSTONE_SKYJUDGMENT"), "hp": 2260.0, "color": Color(1.0, 0.92, 0.62), "bonus": 520000, "pattern": &"crown_judgment", "subtitle": tr("S5_P4_SUB"), "mood": "angry", "motif": "crown", "quote": tr("S5_P4_QUOTE")}
 		]
 	}
 	_push_banner(0.3, stage_title, stage_subtitle)
@@ -1142,8 +1142,8 @@ func _build_stage_five() -> void:
 			"score": 2200,
 			"point_drops": 1
 		})
-	_push_reward(8.6, "波次奖励", "终界前哨已破——先稳住你的节奏。")
-	_push_banner(9.4, "终界交叉", "高压扇面与延迟雷阵开始联锁。")
+	_push_reward(8.6, tr("REWARD_WAVE"), tr("S5_REWARD_1"))
+	_push_banner(9.4, tr("S5_BANNER_1"), tr("S5_BANNER_1_SUB"))
 	for core_index in range(5):
 		var core_time: float = 10.0 + float(core_index) * 0.68
 		var core_x: float = 98.0 + float(core_index) * 94.0
@@ -1195,8 +1195,8 @@ func _build_stage_five() -> void:
 			"point_drops": 2,
 			"power_drops": 1
 		})
-	_push_reward(19.2, "波次奖励", "交叉压制已被撕开——拿一项更狠的强化。")
-	_push_banner(20.0, "终钥回廊", "纵列坠幕与追身扇形开始封死中路。")
+	_push_reward(19.2, tr("REWARD_WAVE"), tr("S5_REWARD_2"))
+	_push_banner(20.0, tr("S5_BANNER_2"), tr("S5_BANNER_2_SUB"))
 	for lane_index in range(7):
 		var lane_time: float = 20.6 + float(lane_index) * 0.36
 		_push_enemy(lane_time, {
@@ -1256,8 +1256,8 @@ func _build_stage_five() -> void:
 			"point_drops": 3,
 			"power_drops": 1
 		})
-	_push_reward(31.0, "波次奖励", "终钥回廊已穿透——如果不满意，记得刷新。")
-	_push_banner(31.8, "终界坍潮", "双侧崩流开始把整片场地推向中心。")
+	_push_reward(31.0, tr("REWARD_WAVE"), tr("S5_REWARD_3"))
+	_push_banner(31.8, tr("S5_BANNER_3"), tr("S5_BANNER_3_SUB"))
 	for storm_index in range(8):
 		var storm_time: float = 32.2 + float(storm_index) * 0.36
 		_push_enemy(storm_time, {
@@ -1317,17 +1317,17 @@ func _build_stage_five() -> void:
 			"point_drops": 3,
 			"power_drops": 1
 		})
-	_push_reward(43.2, "波次奖励", "终界门扉已开——在最终 Boss 前做最后整备。")
+	_push_reward(43.2, tr("REWARD_WAVE"), tr("S5_REWARD_4"))
 	_push_dialogue(47.0, {
 		"cast": {
 			"left": {"accent_color": Color(0.82, 0.3, 0.42), "secondary_color": Color(1.0, 0.92, 0.72), "side": "left", "mood": "angry", "motif": "ribbon"},
 			"right": {"accent_color": boss_config["accent_color"], "secondary_color": boss_config["secondary_color"], "side": "right", "mood": boss_config["mood"], "motif": boss_config["motif"]}
 		},
 		"lines": [
-			{"speaker": "自机", "side": "left", "speaker_color": Color(1.0, 0.88, 0.72), "portrait_update": {"mood": "angry", "motif": "ribbon"}, "text": "原来边界尽头，连天空都会像门一样合上。"},
-			{"speaker": "星穹终钥", "side": "right", "speaker_color": boss_config["accent_color"], "portrait_update": {"mood": "angry", "motif": "crown"}, "text": "你走到这里，便该明白——所有轨迹最终都归我裁决。"},
-			{"speaker": "自机", "side": "left", "speaker_color": Color(1.0, 0.88, 0.72), "portrait_update": {"mood": "soft", "motif": "ribbon"}, "text": "那我就用最后一次闪避，把你的终点也一起改写。"}
+			{"speaker": tr("SPEAKER_PILOT"), "side": "left", "speaker_color": Color(1.0, 0.88, 0.72), "portrait_update": {"mood": "angry", "motif": "ribbon"}, "text": tr("S5_LINE_1")},
+			{"speaker": tr("S5_SPEAKER_BOSS"), "side": "right", "speaker_color": boss_config["accent_color"], "portrait_update": {"mood": "angry", "motif": "crown"}, "text": tr("S5_LINE_2")},
+			{"speaker": tr("SPEAKER_PILOT"), "side": "left", "speaker_color": Color(1.0, 0.88, 0.72), "portrait_update": {"mood": "soft", "motif": "ribbon"}, "text": tr("S5_LINE_3")}
 		]
 	})
-	_push_banner(47.8, "首领逼近", boss_config["name"])
+	_push_banner(47.8, tr("BANNER_BOSS_APPROACH"), boss_config["name"])
 	_push_boss(50.4, boss_config)

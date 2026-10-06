@@ -1,0 +1,309 @@
+keys,zh,en
+UI_SIDE_TITLE,弹幕边界幻想,DanMu: Border Fantasy
+UI_STAT_SCORE,分数,Score
+UI_STAT_BEST,最高分,Best
+UI_STAT_LIVES,残机,Lives
+UI_STAT_BOMBS,灵击,Bombs
+UI_STAT_POWER,火力,Power
+UI_STAT_GRAZE,擦弹,Graze
+UI_STAT_STAGE,关卡,Stage
+UI_STAT_STATE,状态,State
+UI_GUIDE,"操作
+Z / Space  射击 / 确认
+Shift      低速
+X          灵击
+Esc / P    暂停
+
+菜单
+W / S      选择难度
+A / D      选择自机
+
+提示
+- 安全擦弹可以稳定涨分
+- 对话中按 Z 可继续推进
+- 难度越高，弹速、密度与 Boss 压力越强","Controls
+Z / Space  Shoot / Confirm
+Shift      Focus
+X          Bomb
+Esc / P    Pause
+
+Menu
+W / S      Difficulty
+A / D      Ship
+
+Tips
+- Safe grazing is steady score
+- Press Z to advance dialogue
+- Higher difficulty means faster, denser bullets and fiercer bosses"
+UI_MODE_INFO,模式信息,Mode Info
+UI_TITLE_LOGO,弹幕幻想,DanMu
+UI_TITLE_SUBTITLE,边界幻想 - 程序化弹幕歌剧,Border Fantasy - A Procedural Bullet Opera
+UI_SELECT_DIFFICULTY,选择难度,Select Difficulty
+UI_SELECT_SHIP,选择自机,Select Ship
+UI_SELECT_MODE,选择模式,Select Mode
+UI_TITLE_HINT_DEFAULT,W/S 难度  -  A/D 自机  -  Shift 模式  -  Z 开始,W/S Difficulty  -  A/D Ship  -  Shift Mode  -  Z Start
+UI_TITLE_CONTROLS,"操作
+移动  WASD / 方向键
+射击  Z / Space
+低速  Shift（标题页切模式）    灵击  X    暂停  Esc","Controls
+Move  WASD / Arrows    Shoot  Z / Space
+Focus  Shift (switches mode on title)
+Bomb  X    Pause  Esc"
+UI_DIALOGUE_NEXT,Z / Space 继续,Z / Space  Next
+UI_BOSS,首领,Boss
+UI_BOSS_N,首领 %d,Boss %d
+UI_TITLE_BEST,最高分  %09d,Best  %09d
+UI_TITLE_HINT,W/S 选择难度  -  A/D 选择自机  -  Z 开始  -  当前：%s,W/S Difficulty  -  A/D Ship  -  Z Start  -  %s
+UI_PAUSED,暂停中,Paused
+UI_PAUSED_BODY,"战斗已暂停。
+先观察弹幕节奏，再回到战场吧。","The battle is paused.
+Study the rhythm of the barrage, then dive back in."
+UI_PAUSED_FOOTER,Esc / Z 继续  -  X 返回标题,Esc / Z Resume  -  X Back to Title
+UI_STAGE_N,第 %d 关,Stage %d
+UI_STAGE_TRANSITION_FOOTER,短暂整备后将自动进入下一关。,The next stage begins automatically after a short break.
+UI_GAME_OVER,游戏结束,Game Over
+UI_ALL_CLEAR,通关,All Clear
+UI_RESULT_SCORES,"最终得分：%09d
+最高分：%09d","Final Score: %09d
+Best Score: %09d"
+UI_RESULT_VICTORY,你突破了所有边界，并击败了全部 Boss。,You broke through every border and defeated every boss.
+UI_RESULT_DEFEAT,再试一次，把灵击时机和擦弹路线利用得更极致吧。,"Try again, and push your bomb timing and graze routes even further."
+UI_RESULT_FOOTER,Z 重新挑战  -  Esc 返回标题,Z Retry  -  Esc Back to Title
+UI_UPGRADE,强化,Upgrade
+UI_REWARD_REVEALING,奖励展开中……,Revealing rewards...
+UI_REWARD_FOOTER,A / D / W / S 选择   Z 确认   Shift 刷新卡池（剩余 %d 次）,A / D / W / S Select   Z Confirm   Shift Reroll (%d left)
+UI_PHASE_BREAK,Phase Break,Phase Break
+UI_LANGUAGE_TOGGLE_ZH,[中文] / EN  (L),[中文] / EN  (L)
+UI_LANGUAGE_TOGGLE_EN,中文 / [EN]  (L),中文 / [EN]  (L)
+SHIP_SPIRIT,灵枢型,Spirit Frame
+SHIP_SPIRIT_DESC,前方火力均衡，拥有稳定的结界灵击。,Balanced forward fire with a steady barrier bomb.
+SHIP_GALE,岚羽型,Gale Wing
+SHIP_GALE_DESC,散射范围更广，灵击会卷起风暴并吸附道具。,Wider spread shot. Its bomb whips up a storm that pulls in items.
+SHIP_LANCE,星枪型,Star Lance
+SHIP_LANCE_DESC,前方集中贯穿火力，灵击擅长压制 Boss。,Focused piercing forward fire. Its bomb excels at pressuring bosses.
+DIFF_EASY,简单,Easy
+DIFF_NORMAL,普通,Normal
+DIFF_HARD,困难,Hard
+DIFF_LUNATIC,狂气,Lunatic
+BANNER_CHEAT_ON,作弊已启用,Cheat Enabled
+BANNER_CHEAT_ON_SUB,无限生命模式,Infinite lives
+BANNER_CHEAT_OFF,作弊已关闭,Cheat Disabled
+BANNER_CHEAT_OFF_SUB,恢复正常残机规则,Normal life rules restored
+UI_STAGE_FALLBACK,关卡,Stage
+MODE_ENDLESS,无尽模式,Endless Mode
+MODE_STORY,剧情模式,Story Mode
+BANNER_ENDLESS_SUB,通关后解锁的持续挑战,A nonstop challenge unlocked after clearing the game
+ENDLESS_BOARD_TITLE,波次排行榜,Wave Leaderboard
+ENDLESS_BOARD_EMPTY,"暂无无尽记录。
+进入无尽模式并坚持更久吧。","No endless records yet.
+Jump into Endless Mode and hold out as long as you can."
+ENDLESS_BOARD_ROW,%d. 第 %d 波  %09d 分  %02d:%02d,%d. Wave %d  %09d  %02d:%02d
+BANNER_ENDLESS_WAVE,无尽模式 第 %d 波,Endless Mode · Wave %d
+BANNER_ENDLESS_WAVE_SUB,波次越高，敌人越强；高波次可能出现双 Boss,Higher waves mean tougher foes - twin bosses may appear
+ENDLESS_CORE_TWIN,双核,Twin Core
+ENDLESS_CORE_SINGLE,单核,Single Core
+ENDLESS_BOSS_NAME,无尽裁定体 %d · %s,Endless Arbiter %d · %s
+ENDLESS_BOSS_SUB,波次越高，审判越密。,"The higher the wave, the denser the judgment."
+PHASE_FINAL_LATTICE_WHEEL,非符 · 终界格轮,Nonspell · Final Lattice Wheel
+ENDLESS_P1_SUB,格轮与追尾同步施压。,Lattice wheels and homing shots press in together.
+ENDLESS_P1_QUOTE,继续躲，我会把路一条条关掉。,Keep dodging. I'll close your paths one by one.
+PHASE_CROWN_JUDGMENT,符卡 · 王冠裁断,Spell · Crown Judgment
+ENDLESS_P2_SUB,收束扇形与坠幕封死中场。,Converging fans and falling curtains seal the midfield.
+ENDLESS_P2_QUOTE,你的空隙，只是我故意留下的审判间隔。,Your openings are just pauses in judgment I left on purpose.
+REWARD_ENDLESS_TITLE,无尽波次奖励,Endless Wave Reward
+REWARD_ENDLESS_SUB,第 %d 波结束，敌人会继续增强。,Wave %d cleared. The enemies will keep getting stronger.
+MODE_ENDLESS_DESC,连续挑战无限波次。每轮奖励后敌人继续变强，甚至会出现双 Boss。,Endless waves that grow stronger after each reward. Twin bosses may appear.
+MODE_STORY_DESC,按顺序挑战五个关卡，通向完整结局。,Clear all five stages in order to reach the true ending.
+RARITY_EPIC,史诗,EPIC
+RARITY_RARE,稀有,RARE
+RARITY_COMMON,普通,COMMON
+REWARD_POWER_CACHE,聚能储备,Power Cache
+REWARD_POWER_CACHE_DESC,立即获得 +18 Power。,Instantly gain +18 Power.
+REWARD_POWER_CACHE_DETAIL,当前 %d / %d,Now %d / %d
+REWARD_RAPID_TRIGGER,急速扭机,Rapid Trigger
+REWARD_RAPID_TRIGGER_DESC,射速提升 8%。,Fire rate +8%.
+REWARD_RAPID_TRIGGER_DETAIL,射击间隔 %.3f 秒 -> %.3f 秒,Shot interval %.3fs -> %.3fs
+REWARD_OVERCLOCK,超频火力,Overclock
+REWARD_OVERCLOCK_DESC,玩家子弹伤害提升 12%。,Shot damage +12%.
+REWARD_OVERCLOCK_DETAIL,伤害倍率 x%.2f -> x%.2f,Damage x%.2f -> x%.2f
+REWARD_DRONE_ARRAY,僚机阵列,Drone Array
+REWARD_DRONE_ARRAY_DESC,后续火力档位额外获得 1 个支援机位。,+1 option drone at every power tier.
+REWARD_DRONE_ARRAY_DETAIL,僚机数量 %d -> %d,Options %d -> %d
+REWARD_BOMB_STOCK,灵击储备,Bomb Stock
+REWARD_BOMB_STOCK_DESC,额外获得 1 个灵击，并补强翻盘能力。,Gain 1 extra bomb for a stronger comeback.
+REWARD_BOMB_STOCK_DETAIL,灵击数 %d -> %d,Bombs %d -> %d
+REWARD_VITAL_CORE,生命核心,Vital Core
+REWARD_VITAL_CORE_DESC,额外获得 1 条命；若已接近满命则改为分数奖励。,Gain 1 extra life. Gives score instead at max lives.
+REWARD_VITAL_CORE_DETAIL,残机数 %d -> %d,Lives %d -> %d
+REWARD_MAGNET_FIELD,磁吸领域,Magnet Field
+REWARD_MAGNET_FIELD_DESC,扩大道具吸附范围与自动回收线。,Wider item magnet and a lower auto-collect line.
+REWARD_MAGNET_FIELD_DETAIL,磁吸范围 %.0f -> %.0f,Magnet %.0f -> %.0f
+REWARD_GRAZE_DRIVE,擦弹驱动,Graze Drive
+REWARD_GRAZE_DRIVE_DESC,提升擦弹与道具结算的分数收益。,Grazing and item pickups score more.
+REWARD_GRAZE_DRIVE_DETAIL,收益倍率 x%.2f -> x%.2f,Bonus x%.2f -> x%.2f
+REWARD_RESONANCE_CORE,共振核心,Resonance Core
+REWARD_RESONANCE_CORE_DESC,获得 +12 Power、+6% 射速与 +8% 伤害。,"+12 Power, +6% fire rate and +8% damage."
+REWARD_RESONANCE_CORE_DETAIL,全方位进攻型史诗强化。,An all-round offensive epic upgrade.
+REWARD_PHOENIX_DRIVE,凤凰驱动,Phoenix Drive
+REWARD_PHOENIX_DRIVE_DESC,获得 +1 命、+1 灵击；若已接近上限则转为大量分数。,+1 life and +1 bomb. Becomes a big score bonus at the cap.
+REWARD_PHOENIX_DRIVE_DETAIL,高压环境下的保命型史诗强化。,An epic survival upgrade for high-pressure fights.
+REWARD_SUPPLY,补给,Supply
+REWARD_SUPPLY_DESC,+10 Power。,+10 Power.
+REWARD_SUPPLY_DETAIL,默认补给奖励。,Default supply reward.
+BANNER_REWARD_ACQUIRED,获得奖励,Reward Acquired
+BANNER_PHASE_HINT,小心阅读弹流间的空隙,Read the gaps between the bullet streams carefully
+BANNER_SPELL_BREAK,符卡击破,Spell Card Broken!
+BANNER_ALL_BOSSES_DOWN,Boss 全灭,All Bosses Down
+BANNER_ALL_BOSSES_DOWN_SUB,准备迎接下一轮波次,Get ready for the next wave
+BANNER_ALL_CLEAR,全部通关,All Clear
+BANNER_ALL_CLEAR_SUB,你突破了最后的边界,You broke through the final border
+BANNER_STAGE_END,第 %d 关结束,Stage %d Clear
+BANNER_STAGE_END_SUB,短暂整备后进入下一关,"A short break, then on to the next stage"
+HUD_ENDLESS_STAGE,无尽 第 %d 波  x%.2f,Wave %d  x%.2f
+HUD_STAGE_PROGRESS,第 %d / %d 关,%d / %d
+STATE_TITLE,标题,Title
+STATE_DIALOGUE,对话,Dialogue
+STATE_REWARD,奖励,Reward
+STATE_BATTLE_CHEAT,战斗∞,Battle ∞
+STATE_BATTLE,战斗,Battle
+STATE_TRANSITION,过渡,Transition
+STATE_PAUSED,暂停,Paused
+REWARD_WAVE,波次奖励,Wave Reward
+BANNER_BOSS_APPROACH,首领逼近,Boss Approaching
+SPEAKER_LUO_TIANYI,洛天依,Luo Tianyi
+SPEAKER_PILOT,自机,Pilot
+S1_TITLE,第一关 · 星光边界,Stage 1 · Starlight Border
+S1_SUBTITLE,穿过霓虹星海的试炼,A trial across a sea of neon stars
+S1_BOSS_NAME,边界守望者 · 星界秘主,Border Watcher · Astral Arcanist
+S1_BOSS_SUB,星界边缘的守望者,Sentinel at the edge of the astral realm
+S1_P1_SUB,试探性的星屑螺旋,A probing spiral of stardust
+S1_P1_QUOTE,先试着跟上我的星轨吧。,"First, try to keep up with my star trails."
+S1_P2_SUB,月瓣收束的包围阵,A closing cage of moon petals
+S1_P2_QUOTE,月色会替我关上退路。,The moonlight will seal your escape for me.
+S1_P3_SUB,折射层层堆叠的星雨,Starfall refracted layer upon layer
+S1_P3_QUOTE,每一道折光，都会成为新的边界。,Every refracted ray becomes a new border.
+S1_P4_SUB,坠星边界的最终压制,The final onslaught of the falling-star border
+S1_P4_QUOTE,把你的退路与天穹一起压碎。,I'll crush your escape along with the sky itself.
+S1_BANNER_1,中段压制,Midfield Pressure
+S1_BANNER_1_SUB,弹幕密度开始上升,Bullet density is rising
+S1_REWARD_1,开场波次已突破——选择一项加护。,Opening wave cleared - choose a blessing.
+S1_BANNER_2,压制升级,Pressure Rising
+S1_BANNER_2_SUB,交错波次与环形弹同步出现,Crossing waves arrive alongside ring barrages
+S1_REWARD_2,星轨战线已稳住——挑选你的下一项成长。,The star-trail front holds - pick your next upgrade.
+S1_REWARD_3,高压波次已清空——领取一项强化。,High-pressure wave cleared - claim an upgrade.
+S1_SPEAKER_BOSS,星界秘主,Astral Arcanist
+S1_LINE_1,这片边界的星光有点太吵了……你就是在操纵这场弹幕的人？,The starlight on this border is far too noisy... Are you the one conducting this barrage?
+S1_LINE_2,访客啊，若想穿过星界边缘，就用你的轨迹证明自己。,"Visitor, if you wish to cross the astral edge, prove yourself with your flight path."
+S1_LINE_3,那我就不客气了。先把你的符卡拆开，再去下一层。,"Then I won't hold back. I'll tear your spell cards apart, then move on to the next layer."
+S2_TITLE,第二关 · 极光熔炉,Stage 2 · Aurora Furnace
+S2_SUBTITLE,穿行熔色极光与磁暴回廊,Through molten auroras and magnetic-storm corridors
+S2_BOSS_NAME,熔炉守卫 · 炼狱魔王,Furnace Guardian · Purgatory Lord
+S2_BOSS_SUB,磁暴边界的熔炉守卫,Keeper of the furnace on the magnetic-storm border
+S2_P1_SUB,磁化花阵的压迫试探,A probing press of magnetized blossoms
+S2_P1_QUOTE,炉心才刚刚升温。,The furnace core is only just warming up.
+S2_P2_SUB,极光格构封锁回廊,An aurora lattice seals the corridor
+S2_P2_QUOTE,极光会把你的每一步都记录下来。,The aurora will record your every step.
+S2_P3_SUB,彗星熔炼的高速压线,High-speed lines of smelted comets
+S2_P3_QUOTE,把星火压进熔炉，再让它们全部向你倾倒。,"I'll press starfire into the furnace, then pour it all down on you."
+S2_P4_SUB,边界坍缩前的最终熔断,The final meltdown before the border caves in
+S2_P4_QUOTE,边界一旦塌陷，就连回旋的余地也不会留下。,"Once the border caves in, there won't be any room left to maneuver."
+S2_BANNER_1,极光织幕,Aurora Weave
+S2_BANNER_1_SUB,曲线弹与纵向幕墙开始叠加,Curving shots begin to stack with vertical curtains
+S2_REWARD_1,极光遭遇战已结束——选择一项强化。,Aurora skirmish over - choose an upgrade.
+S2_BANNER_2,压制激增,Pressure Surge
+S2_BANNER_2_SUB,磁暴幕墙开始与旋转花瓣交错,Magnetic-storm walls now cross with spinning petals
+S2_REWARD_2,熔炉战线已击穿——选择你的下一项优势。,The furnace front is broken - choose your next edge.
+S2_REWARD_3,风暴格阵已粉碎——收下一项奖励。,The storm lattice is shattered - take a reward.
+S2_SPEAKER_BOSS,炼狱魔王,Purgatory Lord
+S2_LINE_1,极光后面居然是熔炉……难怪第二关的弹幕这么烫。,A furnace behind the aurora... no wonder the bullets here run so hot.
+S2_LINE_2,能走到这里，已经值得夸奖。但边界坍缩前，你一步也别想再往前。,"Making it this far deserves praise. But before the border collapses, you won't take one more step."
+S2_LINE_3,那就看看是你的炉火更凶，还是我的避弹线更稳。,"Then let's see which is stronger: your furnace fire, or my dodging line."
+S3_TITLE,第三关 · 残垣之巅,Stage 3 · Summit of Ruins
+S3_SUBTITLE,穿过崩塌要塞的边缘，攀上残垣之巅。,Skirt the crumbling fortress and climb to the summit of its ruins.
+S3_BOSS_NAME,要塞裁定者 · 夜垣向量,Fortress Arbiter · Nightwall Vector
+S3_BOSS_SUB,破碎边界王冠的看守者。,Warden of the shattered Border Crown.
+PHASE_MAGNETIC_BLOOM,非符 · 磁花绽放,Nonspell · Magnetic Bloom
+S3_P1_SUB,废墟核心绽开，螺旋花瓣层层展开。,"The ruined core blooms, unfurling spiral petals layer by layer."
+S3_P1_QUOTE,你的道路，止于王冠开始之处。,Your road ends where the crown begins.
+PHASE_AURORA_LATTICE,符卡 · 极光格阵,Spell · Aurora Lattice
+S3_P2_SUB,冻结的线条封锁整片天空。,Frozen lines seal off the entire sky.
+S3_P2_QUOTE,你绘出的每一道回避轨迹，都已落在我的格阵之中。,Every dodge you trace already lies within my lattice.
+PHASE_COMET_REFINERY,符卡 · 彗星炼炉,Spell · Comet Refinery
+S3_P3_SUB,要塞碎片如同锻造群星般倾泻而下。,Fortress shards rain down like freshly forged stars.
+S3_P3_QUOTE,那就让这片废墟来锤炼你的勇气吧。,Then let these ruins temper your courage.
+PHASE_BORDER_COLLAPSE,终符 · 边界崩塌,Last Spell · Border Collapse
+S3_P4_SUB,整座堡垒折叠成最后一道压制之墙。,The whole fortress folds into one final wall of pressure.
+S3_P4_QUOTE,现在，亲眼看着整条边界一同坠落吧。,Now watch the entire border fall with your own eyes.
+S3_REWARD_1,外环已突破——选择新的锋芒。,Outer ring breached - choose a new edge.
+S3_BANNER_1,废墟轨道,Ruined Orbit
+S3_BANNER_1_SUB,交叉火力与回旋哨戒开始收束战场。,Crossfire and circling sentries close in on the field.
+S3_REWARD_2,轨道战线已稳住——领取新的强化。,Orbital front secured - claim a new upgrade.
+S3_BANNER_2,要塞封锁,Fortress Lockdown
+S3_BANNER_2_SUB,重装守卫将层层环阵刻入通道。,Heavy guards carve ring after ring into the passage.
+S3_REWARD_3,要塞封锁已破——选择下一项优势。,Lockdown broken - choose your next advantage.
+S3_BANNER_3,崩流压境,Collapse Tide
+S3_BANNER_3_SUB,两翼风暴交错收缩，整条通道被挤压闭合。,"Storms on both flanks cross and contract, squeezing the passage shut."
+S3_REWARD_4,最终通道已打通——在 Boss 前收下最后一项加护。,Final passage open - take one last blessing before the boss.
+S3_SPEAKER_BOSS,夜垣向量,Nightwall Vector
+S3_LINE_1,原来这就是边界的顶端……难怪下面的一切都想拦住我。,So this is the top of the border... no wonder everything below tried to stop me.
+S3_LINE_2,所有断裂的轨迹，最终都会回归王冠。把你的也展示给我看。,Every broken trajectory returns to the crown in the end. Show me yours.
+S3_LINE_3,那我就亲手在整片废墟中劈出一条新路。,Then I'll carve a new path through these ruins myself.
+S4_TITLE,第四关 · 蚀冕终庭,Stage 4 · Court of the Eclipsed Crown
+S4_SUBTITLE,攀上边界最终崩塌的王座。,Ascend to the throne where the border finally crumbles.
+S4_BOSS_NAME,蚀冕君主 · 星终阿斯特拉,Eclipse Monarch · Astra of Star's End
+S4_BOSS_SUB,破碎边界背后的最终意志。,The final will behind the shattered border.
+PHASE_PRISM_SPIRAL,非符 · 棱镜螺旋,Nonspell · Prism Spiral
+S4_P1_SUB,高速镜像环阵覆盖整个中场。,High-speed mirrored rings blanket the midfield.
+S4_P1_QUOTE,别再向上了，王冠早已选好了属于它的天空。,Climb no further. The crown has already chosen its sky.
+PHASE_FALLING_GRID,符卡 · 坠格封天,Spell · Falling Grid Skyseal
+S4_P2_SUB,幕墙与格线一同封死所有通路。,Curtain walls and grid lines seal every route.
+S4_P2_QUOTE,我会把你以为安全的每条路线全部折断。,I will snap every route you thought was safe.
+PHASE_CROWN_FORGE,符卡 · 冕炉炼星,Spell · Crown Forge Starsmelt
+S4_P3_SUB,锻造之星穿过收拢幕面，成排坠落。,Forged stars pierce the closing curtain and fall in rows.
+S4_P3_QUOTE,那就让你的勇气，在彻底的压迫里被炼成吧。,Then let your courage be forged under absolute pressure.
+PHASE_ENDLAND_ANNIHILATION,终符 · 终境崩灭,Last Spell · Endland Annihilation
+S4_P4_SUB,王座本身会化作最后一道弹幕之墙轰然坠下。,The throne itself becomes a final wall of bullets and comes crashing down.
+S4_P4_QUOTE,见证整条边界在最后一次爆发中终结吧。,Witness the whole border end in one final burst.
+S4_REWARD_1,外环冕线已碎——选择新的锋芒。,Outer crown line shattered - choose a new edge.
+S4_BANNER_1,镜翼坠阵,Mirror-Wing Descent
+S4_BANNER_1_SUB,镜像与哨戒一同向内折叠通道。,Mirrors and sentries fold the passage inward.
+S4_REWARD_2,中层冕路已经打开——挑一项更稀有的强化。,The middle crown road is open - pick a rarer upgrade.
+S4_BANNER_2,收割合唱,Reaper Chorus
+S4_BANNER_2_SUB,分层弧幕与延迟爆发一同压缩屏幕空间。,Layered arcs and delayed bursts squeeze the screen.
+S4_REWARD_3,内环冕面已裂——不妨刷新寻找更强的机会。,The inner crown is cracked - try a reroll for something stronger.
+S4_BANNER_3,王座激流,Throne Torrent
+S4_BANNER_3_SUB,沉重的侧翼风暴与镜像雷阵同时逼近。,Heavy flank storms and mirrored mine fields close in at once.
+S4_REWARD_4,王座长廊已开——在终局前收下最后一手强化。,Throne hall open - take one last upgrade before the finale.
+S4_SPEAKER_BOSS,星终阿斯特拉,Astra
+S4_LINE_1,原来这里就是王冠真正的中心。,So this is the true heart of the crown.
+S4_LINE_2,你侥幸穿过的每一道轨迹，都只是通向我的走廊。,Every path you were lucky enough to survive was only a corridor leading to me.
+S4_LINE_3,那我就用最后一条轨迹，把整座王座一并击碎。,Then I'll use my last trajectory to shatter this whole throne.
+S5_TITLE,第五关 · 终界天穹,Stage 5 · Firmament's End
+S5_SUBTITLE,踏入边界尽头，迎战一切轨迹的终点。,Step to the end of the border and face where every trajectory ends.
+S5_BOSS_NAME,终界裁决者 · 星穹终钥,Final Arbiter · Keystone of the Heavens
+S5_BOSS_SUB,守在一切弹道尽头的最终门扉。,The last gate at the end of every bullet's path.
+PHASE_ECLIPSE_LATTICE_WHEEL,非符 · 蚀界格轮,Nonspell · Eclipse Lattice Wheel
+S5_P1_SUB,全屏格轮与边角压线同步推进。,Screen-wide lattice wheels advance with corner-hugging lines.
+S5_P1_QUOTE,终界之前，任何路线都只会变成囚笼。,"Before the final border, every route becomes a cage."
+S5_P2_SUB,追身收束与高压坠幕同时审判。,Homing convergence and crushing curtains pass judgment together.
+S5_P2_QUOTE,你所躲开的，不过是我尚未落下的判决。,What you dodged was only a verdict I had yet to hand down.
+PHASE_BORDER_CORE_COLLAPSE,符卡 · 边界坍核,Spell · Border Core Collapse
+S5_P3_SUB,整片场地开始被层层坍缩挤压。,The whole field is crushed by collapse after collapse.
+S5_P3_QUOTE,当边界开始收缩，连喘息都会成为奢望。,"When the border closes in, even a breath becomes a luxury."
+PHASE_KEYSTONE_SKYJUDGMENT,终符 · 终钥裁天,Last Spell · Keystone Skyjudgment
+S5_P4_SUB,最终审判覆盖整个天穹，所有空隙尽数闭合。,"The final judgment covers the heavens, and every gap seals shut."
+S5_P4_QUOTE,来吧，在终点前证明你的最后一条轨迹。,"Come, prove your final trajectory before the end."
+S5_REWARD_1,终界前哨已破——先稳住你的节奏。,Final outpost broken - steady your rhythm first.
+S5_BANNER_1,终界交叉,Final Crossfire
+S5_BANNER_1_SUB,高压扇面与延迟雷阵开始联锁。,Heavy fans and delayed mine fields begin to interlock.
+S5_REWARD_2,交叉压制已被撕开——拿一项更狠的强化。,The crossfire is torn open - grab a fiercer upgrade.
+S5_BANNER_2,终钥回廊,Keystone Corridor
+S5_BANNER_2_SUB,纵列坠幕与追身扇形开始封死中路。,Falling columns and homing fans start sealing the center lane.
+S5_REWARD_3,终钥回廊已穿透——如果不满意，记得刷新。,Keystone Corridor pierced - not satisfied? Remember to reroll.
+S5_BANNER_3,终界坍潮,Final Collapse Tide
+S5_BANNER_3_SUB,双侧崩流开始把整片场地推向中心。,Collapsing tides from both sides push the field toward the center.
+S5_REWARD_4,终界门扉已开——在最终 Boss 前做最后整备。,The final gate is open - prepare yourself for the final boss.
+S5_SPEAKER_BOSS,星穹终钥,Keystone of the Heavens
+S5_LINE_1,原来边界尽头，连天空都会像门一样合上。,"So at the end of the border, even the sky closes like a door."
+S5_LINE_2,你走到这里，便该明白——所有轨迹最终都归我裁决。,"Having come this far, you should understand - every trajectory is mine to judge."
+S5_LINE_3,那我就用最后一次闪避，把你的终点也一起改写。,"Then with one last dodge, I'll rewrite your ending too."

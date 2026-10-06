@@ -4,6 +4,9 @@ const ColorFx = preload("res://scripts/color_fx.gd")
 const TitleArtScript = preload("res://scripts/title_art.gd")
 const PortraitViewScript = preload("res://scripts/portrait_view.gd")
 const DefaultUIFont = preload("res://fonts/NotoSansCJKsc-Regular.otf")
+const I18n = preload("res://scripts/i18n.gd")
+
+signal language_toggle_requested
 
 var playfield_rect := Rect2(24.0, 24.0, 560.0, 912.0)
 var window_size := Vector2i(960, 960)
@@ -49,6 +52,8 @@ var title_ship_description: Label
 var title_mode_label: Label
 var title_mode_description: Label
 var title_controls: Label
+var language_button: Button
+var side_title: Label
 var difficulty_labels: Array = []
 var title_anim_time := 0.0
 var dialogue_container: Control
@@ -145,20 +150,20 @@ func _build_ui() -> void:
 	side_glow.color = Color(0.45, 0.92, 1.0, 0.65)
 	root.add_child(side_glow)
 
-	var side_title := _make_label("弹幕边界幻想", Vector2(634.0, 34.0), 34, Color(0.88, 0.96, 1.0), 250.0)
+	side_title = _make_label("UI_SIDE_TITLE", Vector2(634.0, 34.0), 34, Color(0.88, 0.96, 1.0), 250.0)
 	root.add_child(side_title)
 
-	score_value = _make_stat_row("分数", 142.0)
-	best_score_value = _make_stat_row("最高分", 190.0)
-	lives_value = _make_stat_row("残机", 238.0)
-	bombs_value = _make_stat_row("灵击", 286.0)
-	power_value = _make_stat_row("火力", 334.0)
-	graze_value = _make_stat_row("擦弹", 382.0)
-	stage_value = _make_stat_row("关卡", 430.0)
-	state_value = _make_stat_row("状态", 478.0)
+	score_value = _make_stat_row("UI_STAT_SCORE", 142.0)
+	best_score_value = _make_stat_row("UI_STAT_BEST", 190.0)
+	lives_value = _make_stat_row("UI_STAT_LIVES", 238.0)
+	bombs_value = _make_stat_row("UI_STAT_BOMBS", 286.0)
+	power_value = _make_stat_row("UI_STAT_POWER", 334.0)
+	graze_value = _make_stat_row("UI_STAT_GRAZE", 382.0)
+	stage_value = _make_stat_row("UI_STAT_STAGE", 430.0)
+	state_value = _make_stat_row("UI_STAT_STATE", 478.0)
 
 	var guide := _make_label(
-		"操作\nZ / Space  射击 / 确认\nShift      低速\nX          灵击\nEsc / P    暂停\n\n菜单\nW / S      选择难度\nA / D      选择自机\n\n提示\n- 安全擦弹可以稳定涨分\n- 对话中按 Z 可继续推进\n- 难度越高，弹速、密度与 Boss 压力越强",
+		"UI_GUIDE",
 		Vector2(634.0, 604.0),
 		17,
 		Color(0.88, 0.90, 1.0),
@@ -168,7 +173,7 @@ func _build_ui() -> void:
 	guide.size.y = 320.0
 	root.add_child(guide)
 	guide.visible = false
-	menu_board_header = _make_label("模式信息", Vector2(634.0, 604.0), 20, Color(1.0, 0.9, 0.68), 250.0)
+	menu_board_header = _make_label("UI_MODE_INFO", Vector2(634.0, 604.0), 20, Color(1.0, 0.9, 0.68), 250.0)
 	root.add_child(menu_board_header)
 	menu_board_header.visible = false
 	menu_board_body = _make_label("", Vector2(634.0, 636.0), 16, Color(0.84, 0.92, 1.0), 268.0)
@@ -184,9 +189,9 @@ func _build_ui() -> void:
 	title_art.position = Vector2(50.0, 30.0)
 	title_art.size = Vector2(500.0, 380.0)
 	title_container.add_child(title_art)
-	title_logo = _make_label("弹幕幻想", Vector2(120.0, 112.0), 56, Color(0.92, 0.98, 1.0), 360.0, HORIZONTAL_ALIGNMENT_CENTER)
+	title_logo = _make_label("UI_TITLE_LOGO", Vector2(120.0, 112.0), 56, Color(0.92, 0.98, 1.0), 360.0, HORIZONTAL_ALIGNMENT_CENTER)
 	title_container.add_child(title_logo)
-	title_subtitle = _make_label("边界幻想 - 程序化弹幕歌剧", Vector2(114.0, 176.0), 20, Color(0.68, 0.9, 1.0), 370.0, HORIZONTAL_ALIGNMENT_CENTER)
+	title_subtitle = _make_label("UI_TITLE_SUBTITLE", Vector2(114.0, 176.0), 20, Color(0.68, 0.9, 1.0), 370.0, HORIZONTAL_ALIGNMENT_CENTER)
 	title_container.add_child(title_subtitle)
 	title_best = _make_label("", Vector2(124.0, 222.0), 18, Color(1.0, 0.92, 0.72), 350.0, HORIZONTAL_ALIGNMENT_CENTER)
 	title_container.add_child(title_best)
@@ -195,13 +200,13 @@ func _build_ui() -> void:
 	difficulty_box.size = Vector2(396.0, 162.0)
 	difficulty_box.color = Color(0.06, 0.08, 0.14, 0.32)
 	title_container.add_child(difficulty_box)
-	var difficulty_header := _make_label("选择难度", Vector2(150.0, 286.0), 22, Color(0.88, 0.96, 1.0), 300.0, HORIZONTAL_ALIGNMENT_CENTER)
+	var difficulty_header := _make_label("UI_SELECT_DIFFICULTY", Vector2(150.0, 286.0), 22, Color(0.88, 0.96, 1.0), 300.0, HORIZONTAL_ALIGNMENT_CENTER)
 	title_container.add_child(difficulty_header)
 	for index in range(4):
 		var row := _make_label("", Vector2(250.0, 322.0 + float(index) * 30.0), 24, Color(0.72, 0.84, 1.0), 220.0, HORIZONTAL_ALIGNMENT_CENTER)
 		difficulty_labels.append(row)
 		title_container.add_child(row)
-	title_hint = _make_label("W/S 难度  -  A/D 自机  -  Shift 模式  -  Z 开始", Vector2(118.0, 480.0), 17, Color(0.84, 0.94, 1.0), 360.0, HORIZONTAL_ALIGNMENT_CENTER)
+	title_hint = _make_label("UI_TITLE_HINT_DEFAULT", Vector2(118.0, 480.0), 17, Color(0.84, 0.94, 1.0), 360.0, HORIZONTAL_ALIGNMENT_CENTER)
 	title_container.add_child(title_hint)
 	title_hint.position = Vector2(92.0, 748.0)
 	title_hint.size.x = 420.0
@@ -211,7 +216,7 @@ func _build_ui() -> void:
 	ship_box.size = Vector2(396.0, 136.0)
 	ship_box.color = Color(0.06, 0.08, 0.14, 0.32)
 	title_container.add_child(ship_box)
-	var ship_header := _make_label("选择自机", Vector2(150.0, 474.0), 22, Color(0.88, 0.96, 1.0), 300.0, HORIZONTAL_ALIGNMENT_CENTER)
+	var ship_header := _make_label("UI_SELECT_SHIP", Vector2(150.0, 474.0), 22, Color(0.88, 0.96, 1.0), 300.0, HORIZONTAL_ALIGNMENT_CENTER)
 	title_container.add_child(ship_header)
 	title_ship_label = _make_label("", Vector2(106.0, 506.0), 28, Color(1.0, 0.9, 0.66), 388.0, HORIZONTAL_ALIGNMENT_CENTER)
 	title_container.add_child(title_ship_label)
@@ -224,7 +229,7 @@ func _build_ui() -> void:
 	mode_box.size = Vector2(396.0, 124.0)
 	mode_box.color = Color(0.06, 0.08, 0.14, 0.32)
 	title_container.add_child(mode_box)
-	var mode_header := _make_label("选择模式", Vector2(150.0, 606.0), 22, Color(0.88, 0.96, 1.0), 300.0, HORIZONTAL_ALIGNMENT_CENTER)
+	var mode_header := _make_label("UI_SELECT_MODE", Vector2(150.0, 606.0), 22, Color(0.88, 0.96, 1.0), 300.0, HORIZONTAL_ALIGNMENT_CENTER)
 	title_container.add_child(mode_header)
 	title_mode_label = _make_label("", Vector2(106.0, 636.0), 24, Color(0.84, 0.94, 1.0), 388.0, HORIZONTAL_ALIGNMENT_CENTER)
 	title_container.add_child(title_mode_label)
@@ -232,10 +237,20 @@ func _build_ui() -> void:
 	title_mode_description.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	title_mode_description.size.y = 46.0
 	title_container.add_child(title_mode_description)
-	title_controls = _make_label("操作\n移动  WASD / 方向键\n射击  Z / Space\n低速  Shift（标题页切模式）    灵击  X    暂停  Esc", Vector2(98.0, 782.0), 18, Color(0.84, 0.92, 1.0), 408.0, HORIZONTAL_ALIGNMENT_CENTER)
+	title_controls = _make_label("UI_TITLE_CONTROLS", Vector2(98.0, 782.0), 18, Color(0.84, 0.92, 1.0), 408.0, HORIZONTAL_ALIGNMENT_CENTER)
 	title_controls.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	title_controls.size.y = 106.0
 	title_container.add_child(title_controls)
+	language_button = Button.new()
+	language_button.position = Vector2(playfield_rect.end.x - 168.0, playfield_rect.position.y + 10.0)
+	language_button.size = Vector2(158.0, 34.0)
+	language_button.focus_mode = Control.FOCUS_NONE
+	language_button.auto_translate_mode = Node.AUTO_TRANSLATE_MODE_DISABLED
+	language_button.add_theme_font_override("font", DefaultUIFont)
+	language_button.add_theme_font_size_override("font_size", 16)
+	language_button.pressed.connect(func() -> void: language_toggle_requested.emit())
+	title_container.add_child(language_button)
+	_refresh_language_ui()
 
 	boss_label = _make_label("", Vector2(playfield_rect.position.x, 8.0), 22, Color(1.0, 0.9, 0.62), playfield_rect.size.x, HORIZONTAL_ALIGNMENT_CENTER)
 	root.add_child(boss_label)
@@ -374,13 +389,13 @@ func _build_ui() -> void:
 	dialogue_line.size = Vector2(530.0, 4.0)
 	dialogue_line.color = Color(0.62, 0.92, 1.0, 0.88)
 	dialogue_container.add_child(dialogue_line)
-	dialogue_name = _make_label("", Vector2(84.0, 694.0), 24, Color(1.0, 0.92, 0.72), 220.0)
+	dialogue_name = _make_label("", Vector2(84.0, 694.0), 24, Color(1.0, 0.92, 0.72), 300.0)
 	dialogue_container.add_child(dialogue_name)
 	dialogue_text = _make_label("", Vector2(84.0, 738.0), 22, Color(0.92, 0.96, 1.0), 458.0)
 	dialogue_text.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	dialogue_text.size.y = 118.0
 	dialogue_container.add_child(dialogue_text)
-	dialogue_hint = _make_label("Z / Space 继续", Vector2(388.0, 858.0), 18, Color(0.62, 0.88, 1.0), 154.0, HORIZONTAL_ALIGNMENT_RIGHT)
+	dialogue_hint = _make_label("UI_DIALOGUE_NEXT", Vector2(388.0, 858.0), 18, Color(0.62, 0.88, 1.0), 154.0, HORIZONTAL_ALIGNMENT_RIGHT)
 	dialogue_container.add_child(dialogue_hint)
 	dialogue_index_label = _make_label("", Vector2(84.0, 856.0), 18, Color(0.68, 0.86, 1.0), 100.0)
 	dialogue_container.add_child(dialogue_index_label)
@@ -397,12 +412,12 @@ func _build_ui() -> void:
 
 	spotlight_container = Control.new()
 	spotlight_container.position = Vector2(316.0, 120.0)
-	spotlight_container.size = Vector2(270.0, 344.0)
+	spotlight_container.size = Vector2(270.0, 364.0)
 	spotlight_container.visible = false
 	root.add_child(spotlight_container)
 	var spot_back := ColorRect.new()
 	spot_back.position = Vector2.ZERO
-	spot_back.size = Vector2(270.0, 344.0)
+	spot_back.size = Vector2(270.0, 364.0)
 	spot_back.color = Color(0.05, 0.06, 0.12, 0.84)
 	spotlight_container.add_child(spot_back)
 	var spot_line := ColorRect.new()
@@ -419,10 +434,12 @@ func _build_ui() -> void:
 	spotlight_title = _make_label("", Vector2(16.0, 226.0), 22, Color(1.0, 0.92, 0.72), 238.0, HORIZONTAL_ALIGNMENT_CENTER)
 	spotlight_container.add_child(spotlight_title)
 	spotlight_subtitle = _make_label("", Vector2(16.0, 256.0), 16, Color(0.72, 0.92, 1.0), 238.0, HORIZONTAL_ALIGNMENT_CENTER)
+	spotlight_subtitle.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	spotlight_subtitle.size.y = 46.0
 	spotlight_container.add_child(spotlight_subtitle)
-	spotlight_quote = _make_label("", Vector2(18.0, 286.0), 14, Color(0.94, 0.96, 1.0), 234.0, HORIZONTAL_ALIGNMENT_CENTER)
+	spotlight_quote = _make_label("", Vector2(18.0, 302.0), 14, Color(0.94, 0.96, 1.0), 234.0, HORIZONTAL_ALIGNMENT_CENTER)
 	spotlight_quote.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-	spotlight_quote.size.y = 44.0
+	spotlight_quote.size.y = 58.0
 	spotlight_container.add_child(spotlight_quote)
 
 	flash_rect = ColorRect.new()
@@ -466,6 +483,7 @@ func set_boss_state(visible: bool, current_hp: float, max_hp_value: float, phase
 	if not visible:
 		return
 	boss_label.text = phase_name
+	_fit_label_font(boss_label, 22, 14, playfield_rect.size.x)
 	boss_bar.max_value = max(1.0, max_hp_value)
 	boss_bar.value = clamp(current_hp, 0.0, max_hp_value)
 
@@ -476,7 +494,7 @@ func set_boss_states(states: Array) -> void:
 		return
 	if states.size() == 1:
 		var state: Dictionary = states[0]
-		set_boss_state(true, float(state.get("hp", 0.0)), float(state.get("max_hp", 1.0)), str(state.get("phase_name", "首领")))
+		set_boss_state(true, float(state.get("hp", 0.0)), float(state.get("max_hp", 1.0)), str(state.get("phase_name", tr("UI_BOSS"))))
 		return
 	boss_label.visible = false
 	boss_bar.visible = false
@@ -489,7 +507,7 @@ func set_boss_states(states: Array) -> void:
 			continue
 		var state: Dictionary = states[row_index]
 		var accent_color: Color = state.get("accent_color", Color(0.62, 0.96, 1.0))
-		row_data["label"].text = str(state.get("phase_name", "首领 %d" % (row_index + 1)))
+		row_data["label"].text = str(state.get("phase_name", tr("UI_BOSS_N") % (row_index + 1)))
 		row_data["label"].add_theme_color_override("font_color", Color(1.0, 0.96, 0.9) if row_data["side"] == "left" else Color(0.9, 0.98, 1.0))
 		row_data["accent"].color = Color(accent_color.r, accent_color.g, accent_color.b, 0.95)
 		row_data["side_bar"].color = Color(accent_color.r, accent_color.g, accent_color.b, 0.95)
@@ -503,21 +521,22 @@ func flash(color: Color, alpha := 0.6, duration := 0.25) -> void:
 	flash_timer = duration
 	flash_rect.visible = true
 
-func show_title(best_score: int, difficulty_names := [], selected_index := 1, ship_label := "灵枢型", ship_description := "", mode_label := "剧情模式", mode_description := "", board_title := "模式信息", board_body := "") -> void:
+func show_title(best_score: int, difficulty_names := [], selected_index := 1, ship_label := "", ship_description := "", mode_label := "", mode_description := "", board_title := "", board_body := "") -> void:
 	overlay.visible = false
 	dialogue_container.visible = false
 	title_container.visible = true
 	menu_board_header.visible = true
 	menu_board_body.visible = true
-	title_best.text = "最高分  %09d" % best_score
+	title_best.text = tr("UI_TITLE_BEST") % best_score
 	if difficulty_names.is_empty():
-		difficulty_names = ["简单", "普通", "困难", "狂气"]
+		difficulty_names = [tr("DIFF_EASY"), tr("DIFF_NORMAL"), tr("DIFF_HARD"), tr("DIFF_LUNATIC")]
+	_refresh_language_ui()
 	_update_title_menu(difficulty_names, selected_index, ship_label, ship_description, mode_label, mode_description, board_title, board_body)
 
 func update_title_difficulty(difficulty_names: Array, selected_index: int) -> void:
 	_update_title_menu(difficulty_names, selected_index, title_ship_label.text.replace("< ", "").replace(" >", ""), title_ship_description.text, title_mode_label.text.replace("< ", "").replace(" >", ""), title_mode_description.text, menu_board_header.text, menu_board_body.text)
 
-func update_title_menu(difficulty_names: Array, selected_index: int, ship_label := "灵枢型", ship_description := "", mode_label := "剧情模式", mode_description := "", board_title := "模式信息", board_body := "") -> void:
+func update_title_menu(difficulty_names: Array, selected_index: int, ship_label := "", ship_description := "", mode_label := "", mode_description := "", board_title := "", board_body := "") -> void:
 	_update_title_menu(difficulty_names, selected_index, ship_label, ship_description, mode_label, mode_description, board_title, board_body)
 
 func _update_title_menu(difficulty_names: Array, selected_index: int, ship_label: String, ship_description: String, mode_label: String, mode_description: String, board_title: String, board_body: String) -> void:
@@ -538,7 +557,8 @@ func _update_title_menu(difficulty_names: Array, selected_index: int, ship_label
 	title_mode_description.text = mode_description
 	menu_board_header.text = board_title
 	menu_board_body.text = board_body
-	title_hint.text = "W/S 选择难度  -  A/D 选择自机  -  Z 开始  -  当前：%s" % difficulty_names[selected_index]
+	title_hint.text = tr("UI_TITLE_HINT") % difficulty_names[selected_index]
+	_fit_label_font(title_hint, 17, 12, 420.0)
 	title_container.set_meta("selected_index", selected_index)
 
 func _current_title_selection_index() -> int:
@@ -550,24 +570,24 @@ func hide_title() -> void:
 	menu_board_body.visible = false
 
 func show_pause() -> void:
-	set_overlay("暂停中", "战斗已暂停。\n先观察弹幕节奏，再回到战场吧。", "Esc / Z 继续  -  X 返回标题")
+	set_overlay(tr("UI_PAUSED"), tr("UI_PAUSED_BODY"), tr("UI_PAUSED_FOOTER"))
 
 func show_stage_transition(stage_number: int, title: String, subtitle: String) -> void:
-	set_overlay("第 %d 关" % stage_number, "%s\n\n%s" % [title, subtitle], "短暂整备后将自动进入下一关。")
+	set_overlay(tr("UI_STAGE_N") % stage_number, "%s\n\n%s" % [title, subtitle], tr("UI_STAGE_TRANSITION_FOOTER"))
 
 func hide_overlay() -> void:
 	overlay.visible = false
 
 func show_result(victory: bool, score: int, best_score: int) -> void:
-	var title := "游戏结束"
+	var title := tr("UI_GAME_OVER")
 	if victory:
-		title = "通关"
-	var body := "最终得分：%09d\n最高分：%09d" % [score, best_score]
+		title = tr("UI_ALL_CLEAR")
+	var body := tr("UI_RESULT_SCORES") % [score, best_score]
 	if victory:
-		body += "\n\n你突破了所有边界，并击败了全部 Boss。"
+		body += "\n\n" + tr("UI_RESULT_VICTORY")
 	else:
-		body += "\n\n再试一次，把灵击时机和擦弹路线利用得更极致吧。"
-	set_overlay(title, body, "Z 重新挑战  -  Esc 返回标题")
+		body += "\n\n" + tr("UI_RESULT_DEFEAT")
+	set_overlay(title, body, tr("UI_RESULT_FOOTER"))
 
 func _reset_overlay_layout() -> void:
 	reward_container.visible = false
@@ -589,6 +609,7 @@ func set_overlay(header: String, body: String, footer: String) -> void:
 	overlay.visible = true
 	_reset_overlay_layout()
 	overlay_header.text = header
+	_fit_label_font(overlay_header, 38, 22, 560.0)
 	overlay_body.text = body
 	overlay_footer.text = footer
 	dialogue_container.visible = false
@@ -597,10 +618,12 @@ func show_reward_selection(title: String, subtitle: String, options: Array, sele
 	overlay.visible = true
 	_reset_overlay_layout()
 	overlay_header.text = title
+	_fit_label_font(overlay_header, 38, 22, 560.0)
 	overlay_body.position = Vector2(206.0, 338.0)
 	overlay_body.size = Vector2(548.0, 54.0)
 	overlay_body.add_theme_font_size_override("font_size", 18)
 	overlay_body.text = subtitle
+	_fit_label_font(overlay_body, 18, 13, 548.0)
 	reward_container.visible = true
 	if restart_anim:
 		reward_anim_duration = 0.34
@@ -621,14 +644,14 @@ func show_reward_selection(title: String, subtitle: String, options: Array, sele
 		card_nodes["accent"].color = Color(accent_color.r, accent_color.g, accent_color.b, 0.95)
 		card_nodes["rarity"].text = str(option.get("rarity_label", "COMMON"))
 		card_nodes["rarity"].add_theme_color_override("font_color", rarity_color)
-		card_nodes["title"].text = str(option.get("label", "强化"))
+		card_nodes["title"].text = str(option.get("label", tr("UI_UPGRADE")))
 		card_nodes["title"].add_theme_color_override("font_color", Color(1.0, 1.0, 1.0) if selected else Color(0.94, 0.96, 1.0))
 		card_nodes["desc"].text = str(option.get("description", ""))
 		card_nodes["detail"].text = str(option.get("detail", ""))
 		card_nodes["detail"].add_theme_color_override("font_color", Color(accent_color.r, accent_color.g, accent_color.b, 0.92))
 	overlay_footer.position = Vector2(206.0, 610.0)
 	overlay_footer.size = Vector2(548.0, 64.0)
-	overlay_footer.text = "奖励展开中……" if locked else ("A / D / W / S 选择   Z 确认   Shift 刷新卡池（剩余 %d 次）" % refreshes_left)
+	overlay_footer.text = tr("UI_REWARD_REVEALING") if locked else (tr("UI_REWARD_FOOTER") % refreshes_left)
 	dialogue_container.visible = false
 	_update_reward_card_animation()
 
@@ -656,7 +679,9 @@ func _update_reward_card_animation() -> void:
 
 func show_banner(title: String, subtitle: String) -> void:
 	banner_title.text = title
+	_fit_label_font(banner_title, 32, 18, playfield_rect.size.x)
 	banner_subtitle.text = subtitle
+	_fit_label_font(banner_subtitle, 18, 12, playfield_rect.size.x)
 	banner_timer = banner_duration
 	banner_title.visible = true
 	banner_subtitle.visible = subtitle != ""
@@ -686,7 +711,7 @@ func show_dialogue_line(line: Dictionary, current_index: int, total: int) -> voi
 	dialogue_visible_count = 0
 	dialogue_text.text = ""
 	dialogue_index_label.text = "%d / %d" % [current_index, total]
-	dialogue_hint.text = "Z / Space 继续"
+	dialogue_hint.text = "UI_DIALOGUE_NEXT"
 	var side := str(line.get("side", "left"))
 	var active_color: Color = line.get("speaker_color", Color(1.0, 0.9, 0.72))
 	dialogue_name.add_theme_color_override("font_color", active_color)
@@ -728,8 +753,10 @@ func show_boss_spotlight(config: Dictionary, duration := 2.4) -> void:
 	spotlight_phase.text = str(config.get("phase_name", ""))
 	spotlight_phase.visible = spotlight_phase.text != ""
 	spotlight_phase.add_theme_color_override("font_color", ColorFx.alpha(accent.lightened(0.18), 0.96))
-	spotlight_title.text = str(config.get("name", "首领"))
+	spotlight_title.text = str(config.get("name", tr("UI_BOSS")))
 	spotlight_title.add_theme_color_override("font_color", ColorFx.alpha(accent.lightened(0.28), 0.98))
+	_fit_label_font(spotlight_title, 22, 14, 238.0)
+	_fit_label_font(spotlight_phase, 18, 12, 238.0)
 	spotlight_subtitle.text = str(config.get("subtitle", ""))
 	spotlight_subtitle.add_theme_color_override("font_color", ColorFx.alpha(secondary.lightened(0.08), 0.94))
 	spotlight_quote.text = str(config.get("quote", ""))
@@ -743,3 +770,18 @@ func show_boss_spotlight(config: Dictionary, duration := 2.4) -> void:
 		"motif": config.get("motif", "ribbon"),
 		"title": spotlight_title.text
 	})
+
+func _refresh_language_ui() -> void:
+	_fit_label_font(side_title, 34, 20, 250.0)
+	if language_button:
+		language_button.text = tr("UI_LANGUAGE_TOGGLE_ZH") if I18n.current_locale() == I18n.LOCALE_ZH else tr("UI_LANGUAGE_TOGGLE_EN")
+
+## Shrinks a single-line label's font until its text fits max_width (longer English strings).
+## Labels grow to fit their text, so the width is passed explicitly and restored afterwards.
+func _fit_label_font(label: Label, base_size: int, min_size: int, max_width: float) -> void:
+	var font_size := base_size
+	var text := tr(label.text)
+	while font_size > min_size and DefaultUIFont.get_string_size(text, HORIZONTAL_ALIGNMENT_LEFT, -1, font_size).x > max_width:
+		font_size -= 1
+	label.add_theme_font_size_override("font_size", font_size)
+	label.size = Vector2(max_width, label.size.y)
