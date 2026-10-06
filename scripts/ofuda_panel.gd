@@ -30,6 +30,8 @@ const BEST_PLAY_Y := 248.0
 const BEST_MENU_Y := 40.0
 const KEYS_Y := 600.0
 const KEY_ROW := 20.0
+const STAGE_NAME_POS := Vector2(PAD + CONTENT_W - 52.0, 700.0)
+const STAGE_NAME_HEIGHT := 200.0
 
 var logo: Label
 var logo_sub: Label
@@ -40,6 +42,8 @@ var lives_extra: Label
 var power_value: Label
 var graze_value: Label
 var stage_value: Label
+## The stage name runs down the empty foot of the strip in faint ink, like a scroll inscription.
+var stage_name: Label
 var board_header: Label
 var board_body: Label
 var key_rows: Control
@@ -72,6 +76,7 @@ func _ready() -> void:
 	graze_value = _play(_value_label(Vector2(PAD, LIVES_Y + ROW * 3.0 - 4.0), 18, UiTheme.INK, HORIZONTAL_ALIGNMENT_RIGHT))
 	_play(_stat_label("UI_STAT_STAGE", LIVES_Y + ROW * 4.0))
 	stage_value = _play(UiTheme.make_label("", Vector2(PAD, LIVES_Y + ROW * 4.0 - 4.0), UiTheme.SerifFont, 18, UiTheme.INK, CONTENT_W, HORIZONTAL_ALIGNMENT_RIGHT))
+	stage_name = _play(UiTheme.make_label("", STAGE_NAME_POS, UiTheme.BrushFont, 34, UiTheme.INK_FAINT, 48.0, HORIZONTAL_ALIGNMENT_CENTER))
 	board_header = UiTheme.make_label("", Vector2(PAD, 150.0), UiTheme.SerifFont, 18, UiTheme.VERMILION, CONTENT_W)
 	add_child(board_header)
 	board_body = UiTheme.make_wrapped(UiTheme.make_label("", Vector2(PAD, 184.0), UiTheme.SerifFont, 14, UiTheme.INK, CONTENT_W), KEYS_Y - 200.0)
@@ -136,6 +141,7 @@ func set_status(status: Dictionary) -> void:
 	power_value.text = "%d / %d" % [int(power), int(power_max)]
 	graze_value.text = "%d" % int(status.get("graze", 0))
 	stage_value.text = str(status.get("stage_text", ""))
+	_set_stage_name(str(status.get("stage_name", "")))
 	difficulty_text.text = str(status.get("difficulty_text", ""))
 	UiTheme.fit_line(difficulty_text, 40 if I18n.current_locale() == I18n.LOCALE_ZH else 24, 14, 104.0)
 	queue_redraw()
@@ -199,3 +205,18 @@ func _draw_power_stroke(origin: Vector2) -> void:
 		var inked: bool = index < filled
 		var color: Color = UiTheme.INK if inked else UiTheme.INK_FAINT
 		draw_line(Vector2(x - lean, origin.y - 2.0), Vector2(x + lean, origin.y + 12.0), color, 3.0 if inked else 1.0, true)
+
+func _set_stage_name(text: String) -> void:
+	var vertical_zh: bool = I18n.current_locale() == I18n.LOCALE_ZH
+	var shown: String = "\n".join(text.split("")) if vertical_zh else text
+	if stage_name.text == shown:
+		return
+	stage_name.text = shown
+	# Chinese stacks one glyph per line; Latin text is turned on its side instead
+	stage_name.rotation = 0.0 if vertical_zh else PI * 0.5
+	stage_name.size = Vector2(48.0, STAGE_NAME_HEIGHT) if vertical_zh else Vector2(STAGE_NAME_HEIGHT, 48.0)
+	stage_name.position = STAGE_NAME_POS if vertical_zh else STAGE_NAME_POS + Vector2(44.0, 0.0)
+	if vertical_zh:
+		stage_name.add_theme_font_size_override("font_size", 34)
+	else:
+		UiTheme.fit_line(stage_name, 22, 12, STAGE_NAME_HEIGHT - 48.0)

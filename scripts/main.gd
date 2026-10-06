@@ -1662,7 +1662,8 @@ func _update_hud() -> void:
 		"power_max": int(MAX_POWER),
 		"graze": graze,
 		"stage_text": (tr("HUD_ENDLESS_STAGE") % [endless_wave, endless_score_multiplier]) if endless_mode_active else (tr("HUD_STAGE_PROGRESS") % [current_stage, FINAL_STAGE]),
-		"difficulty_text": get_difficulty_label()
+		"difficulty_text": get_difficulty_label(),
+		"stage_name": "" if endless_mode_active or stage_director == null else str(stage_director.stage_title).get_slice("·", 1).strip_edges(),
 	})
 	if state == GameState.MENU:
 		hud.update_title_menu(get_difficulty_labels(), difficulty_index, get_ship_label(), get_ship_description(), _menu_mode_label(), _menu_mode_description(), _endless_board_title(), _endless_board_text())

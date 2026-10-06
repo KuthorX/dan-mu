@@ -2,6 +2,7 @@ extends Node2D
 
 const BulletScript = preload("res://scripts/bullet.gd")
 const KEYLINE := Color(0.02, 0.01, 0.03, 0.9)
+const PAPER := Color(0.91, 0.86, 0.75)
 
 ## Sentinel phase name sent to the game between two phases (shown as UI_PHASE_BREAK).
 const PHASE_BREAK := "Phase Break"
@@ -578,30 +579,35 @@ func _pattern_crown_judgment(delta: float) -> void:
 			})
 
 func _draw() -> void:
-	var body_color: Color = current_color
-	if flash_timer > 0.0:
-		body_color = current_color.lerp(Color.WHITE, 0.45)
+	# a paper-cut shikigami: rice paper body, ink keyline, the phase colour only in its seal-eye
+	var paper: Color = PAPER.lerp(Color.WHITE, 0.6) if flash_timer > 0.0 else PAPER
 	var skirt := PackedVector2Array([
 		Vector2(0.0, -radius * 1.1),
 		Vector2(radius * 0.82, -radius * 0.2),
 		Vector2(radius * 0.66, radius * 1.05),
-		Vector2(0.0, radius * 0.62),
+		Vector2(radius * 0.22, radius * 0.7),
+		Vector2(0.0, radius * 1.0),
+		Vector2(-radius * 0.22, radius * 0.7),
 		Vector2(-radius * 0.66, radius * 1.05),
 		Vector2(-radius * 0.82, -radius * 0.2)
 	])
-	var outline: Array = Geometry2D.offset_polygon(skirt, 2.5)
+	var outline: Array = Geometry2D.offset_polygon(skirt, 3.0)
 	if not outline.is_empty():
 		draw_colored_polygon(outline[0], KEYLINE)
-	draw_colored_polygon(skirt, body_color)
-	# antialiased edge so the flat fill never shows stair-stepping
-	draw_polyline(skirt + PackedVector2Array([skirt[0]]), KEYLINE, 1.2, true)
+	draw_colored_polygon(skirt, paper)
+	# two cut slits read as folded paper, not a flat polygon
+	draw_line(Vector2(-radius * 0.5, radius * 0.1), Vector2(-radius * 0.38, radius * 0.78), KEYLINE, 2.0, true)
+	draw_line(Vector2(radius * 0.5, radius * 0.1), Vector2(radius * 0.38, radius * 0.78), KEYLINE, 2.0, true)
 	draw_circle(Vector2.ZERO, radius * 0.34, KEYLINE)
-	draw_circle(Vector2.ZERO, radius * 0.26, Color(0.93, 0.89, 0.80))
+	draw_circle(Vector2.ZERO, radius * 0.27, current_color)
+	draw_circle(Vector2.ZERO, radius * 0.1, KEYLINE)
 	for wing_index in range(3):
 		var offset_angle: float = orbit_angle + float(wing_index) * TAU / 3.0
-		var wing_pos: Vector2 = Vector2(cos(offset_angle), sin(offset_angle)) * (radius * 1.05)
-		draw_rect(Rect2(wing_pos - Vector2(5.0, 5.0), Vector2(10.0, 10.0)), KEYLINE, true)
-		draw_rect(Rect2(wing_pos - Vector2(3.5, 3.5), Vector2(7.0, 7.0)), body_color.lightened(0.2), true)
+		var wing_pos: Vector2 = Vector2(cos(offset_angle), sin(offset_angle)) * (radius * 1.15)
+		# orbiting ofuda strips
+		draw_rect(Rect2(wing_pos - Vector2(4.5, 8.5), Vector2(9.0, 17.0)), KEYLINE, true)
+		draw_rect(Rect2(wing_pos - Vector2(3.0, 7.0), Vector2(6.0, 14.0)), paper, true)
+		draw_rect(Rect2(wing_pos - Vector2(1.0, 4.5), Vector2(2.0, 9.0)), current_color, true)
 
 ## Touhou-style spell circle drawn beneath the bullets (negative z) so it never hides them.
 class SpellCircle extends Node2D:
