@@ -20,6 +20,18 @@ func _ready() -> void:
 func _process(delta: float) -> void:
 	clock += delta
 
+func _exit_tree() -> void:
+	shutdown()
+
+## Stops and detaches every stream so the AudioServer can release its playback
+## objects before the engine shuts down (otherwise they leak at exit).
+func shutdown() -> void:
+	current_bgm_key = ""
+	for player in [bgm_player, jingle_player] + sfx_players:
+		if player:
+			player.stop()
+			player.stream = null
+
 func play_title_theme() -> void:
 	_play_bgm("title")
 
