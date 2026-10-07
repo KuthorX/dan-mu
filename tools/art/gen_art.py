@@ -80,7 +80,8 @@ STAGES = {
     1: {"ink": (7, 8, 14), "mist": (36, 42, 66), "rim": (110, 120, 156), "motif": "stars"},
     2: {"ink": (16, 8, 8), "mist": (92, 40, 22), "rim": (190, 96, 50), "motif": "furnace"},
     3: {"ink": (12, 10, 18), "mist": (56, 48, 74), "rim": (130, 116, 160), "motif": "walls"},
-    4: {"ink": (17, 6, 10), "mist": (74, 24, 34), "rim": (170, 70, 76), "motif": "eclipse"},
+    # the eclipse court is dusk-plum, not red: vermilion is reserved for danger (bullets)
+    4: {"ink": (13, 8, 14), "mist": (52, 32, 54), "rim": (132, 96, 128), "motif": "eclipse"},
     5: {"ink": (5, 13, 15), "mist": (22, 66, 66), "rim": (70, 170, 160), "motif": "gate"},
 }
 BAND_COUNT = 4
@@ -245,6 +246,8 @@ BULLET_SIZE = 96
 SUPERSAMPLE = 4
 ## Half-extent of each sprite in bullet-radius units (the body radius is 1.0).
 BULLET_SHAPES = {"orb": 1.3, "diamond": 1.6, "needle": 2.2, "petal": 2.0, "star": 1.7}
+## Pigment value at the pooled rim (the core is 1.0); kept high so rims out-value every sky.
+BULLET_RIM_VALUE = 0.76
 
 
 def _shape_polygon(shape, rng, unit, centre):
@@ -278,12 +281,20 @@ def paint_bullet(shape, rng):
     keyline_img = mask_img.filter(ImageFilter.MaxFilter(2 * int(unit * 0.16) + 1))
     body = np.asarray(mask_img, dtype=np.float32) / 255.0
     keyline = np.asarray(keyline_img, dtype=np.float32) / 255.0
-    # distance-ish falloff from the edge: watercolour pools pigment at the rim
+    # ink bleeds a little into the paper around the keyline: a soft sumi pool that
+    # darkens whatever sky is behind, so the pigment always sits on near-black
+    bleed_img = keyline_img.filter(ImageFilter.MaxFilter(2 * int(unit * 0.06) + 1)).filter(ImageFilter.GaussianBlur(unit * 0.05))
+    bleed = np.asarray(bleed_img, dtype=np.float32) / 255.0
+    # fade the pool out before the sprite edge so no quad corner ever shows
+    border = np.minimum.outer(np.minimum(np.arange(size), np.arange(size)[::-1]), np.minimum(np.arange(size), np.arange(size)[::-1]))
+    bleed *= np.clip(border / (unit * 0.1), 0.0, 1.0)
+    # distance-ish falloff from the edge: watercolour pools pigment at the rim, but the
+    # pool stays high-value so the silhouette never sinks into a warm or saturated sky
     blurred = np.asarray(mask_img.filter(ImageFilter.GaussianBlur(unit * 0.35)), dtype=np.float32) / 255.0
     grain = fbm(rng, size, size, 24, 24, octaves=3)
-    value = (0.58 + 0.42 * np.clip((blurred - 0.5) * 2.2, 0.0, 1.0)) * (0.9 + 0.12 * grain)
+    value = (BULLET_RIM_VALUE + (1.0 - BULLET_RIM_VALUE) * np.clip((blurred - 0.5) * 2.2, 0.0, 1.0)) * (0.9 + 0.12 * grain)
     rgb = np.repeat((value * body)[..., None], 3, axis=2)
-    alpha = np.maximum(body, keyline * 0.9)
+    alpha = np.maximum.reduce([body, keyline * 0.95, bleed * 0.6])
     image = Image.fromarray(np.clip(np.dstack([rgb, alpha[..., None]]) * 255, 0, 255).astype(np.uint8), "RGBA")
     image = image.resize((BULLET_SIZE, BULLET_SIZE), Image.Resampling.LANCZOS)
     (ROOT / "art" / "bullets").mkdir(parents=True, exist_ok=True)
