@@ -1,31 +1,40 @@
 #!/usr/bin/env python3
-"""Synthesises DanMu's sound effects into audio/sfx/*.wav (44.1 kHz mono 16-bit).
+"""Builds DanMu's sound effects into audio/sfx/*.wav (44.1 kHz 16-bit; mono effects,
+stereo jingles) by layering preset hits from the SFX sheet with numpy synthesis.
 
-Palette: paper and wood for frequent events (brush flicks, hyoshigi clacks, koto
-plucks via Karplus-Strong), bronze and taiko for big ones (bomb, spell, death).
-Jingles (stage clear, game clear, game over) are short koto/shakuhachi phrases
-rendered with FluidSynth from the same soundfont as the music.
+Palette: paper and wood for frequent events (brush flicks, wood blocks, Plucked String
+"koto" plucks, Ceramic ticks), bronze and taiko for big ones (Wudang Mountain bell,
+MS Basic taiko). Every effect layers at least two sources, so none is a bare preset hit.
+Jingles are short koto / pan-flute phrases cut from the same sheet render.
 
-    python3 tools/audio/sfx.py
+    arch -arm64 /tmp/audiokit/venv/bin/python tools/audio/sfx_sheet.py     # sheet MIDI + spec
+    lockf -t 3600 /tmp/audiokit/render.lock arch -arm64 /tmp/audiokit/venv/bin/python \
+        /tmp/audiokit/render.py tools/audio/.cache/sfx_sheet/sheet.json
+    arch -arm64 /tmp/audiokit/venv/bin/python tools/audio/sfx.py            # layer + normalise
 """
+import json
 import pathlib
-import subprocess
 import sys
 
 import numpy as np
+import pedalboard
+import pyloudnorm
+import soundfile
 from scipy import signal
-from scipy.io import wavfile
 
 sys.path.insert(0, str(pathlib.Path(__file__).resolve().parent))
-from audio_common import CACHE, ROOT, write_wav16  # noqa: E402
-from music_lib import Song, pitch  # noqa: E402
-from render_music import SOUNDFONT  # noqa: E402
+from sfx_sheet import JINGLES, WORK as SHEET  # noqa: E402
 
+ROOT = pathlib.Path(__file__).resolve().parents[2]
 RATE = 44100
-PEAK = 10 ** (-1.5 / 20)
+TARGET_LUFS = -16.0
+CEILING_DBTP = -1.0
+MEASURE_MIN = 0.4  # pyloudnorm needs one 400 ms block; shorter effects are zero-padded to it
 OUT = ROOT / "audio" / "sfx"
 rng = np.random.default_rng(7)
 
+
+# ---- numpy synthesis ------------------------------------------------------------
 
 def t_axis(duration: float) -> np.ndarray:
     return np.arange(int(duration * RATE)) / RATE
@@ -54,36 +63,32 @@ def glide(t: np.ndarray, start: float, end: float, curve: float = 1.0) -> np.nda
     return np.sin(2 * np.pi * np.cumsum(freq) / RATE)
 
 
-def pluck(freq: float, duration: float, brightness: float = 0.5, damping: float = 0.996) -> np.ndarray:
-    """Karplus-Strong string: a koto-like pluck."""
-    period = max(2, int(RATE / freq))
-    buffer = lowpass(rng.uniform(-1, 1, period), 1000 + 8000 * brightness)
-    out = np.zeros(int(duration * RATE))
-    for index in range(len(out)):
-        out[index] = buffer[index % period]
-        buffer[index % period] = damping * 0.5 * (buffer[index % period] + buffer[(index + 1) % period])
-    return out * decay(t_axis(duration), duration * 0.6, 0.0005)
-
-
-def bell(freq: float, duration: float, tau: float, ratios=(1.0, 2.76, 5.4, 8.93)) -> np.ndarray:
-    t = t_axis(duration)
-    return sum(np.sin(2 * np.pi * freq * ratio * t) * decay(t, tau / (1 + index * 0.8), 0.002) / (1 + index)
-               for index, ratio in enumerate(ratios))
-
-
 def taper(samples: np.ndarray, seconds: float = 0.02) -> np.ndarray:
-    """Fades the last `seconds` to zero so a truncated decay never ends in a click."""
-    length = min(len(samples) // 2, int(seconds * RATE))
-    return np.concatenate([samples[:-length], samples[-length:] * np.linspace(1, 0, length) ** 2])
+    """1 ms fade-in and a squared fade-out, so no layer starts or ends on a click."""
+    out = np.array(samples, dtype=np.float64)
+    length = min(len(out) // 2, int(seconds * RATE))
+    head = min(len(out) // 4, int(0.001 * RATE))
+    if length:
+        out[-length:] *= np.linspace(1, 0, length)[(slice(None),) + (None,) * (out.ndim - 1)] ** 2
+    if head:
+        out[:head] *= np.linspace(0, 1, head)[(slice(None),) + (None,) * (out.ndim - 1)]
+    return out
 
 
-def place(total: float, *parts) -> np.ndarray:
-    """Mixes (offset_seconds, gain, samples) parts into one buffer, each part tapered."""
-    out = np.zeros(int(total * RATE))
+def norm(samples: np.ndarray) -> np.ndarray:
+    peak = np.max(np.abs(samples))
+    return samples / peak if peak > 0 else samples
+
+
+def place(total: float, *parts, channels: int = 1) -> np.ndarray:
+    """Mixes (offset_seconds, gain, samples) parts into one buffer; each part is
+    peak-normalised first, so `gain` is the layer's level relative to the others."""
+    shape = (int(total * RATE),) if channels == 1 else (int(total * RATE), channels)
+    out = np.zeros(shape)
     for offset, gain, samples in parts:
         start = int(offset * RATE)
         end = min(len(out), start + len(samples))
-        out[start:end] += gain * taper(samples[:end - start])
+        out[start:end] += gain * taper(norm(samples)[:end - start])
     return out
 
 
@@ -94,127 +99,63 @@ def wood(freq: float, duration: float = 0.06, tau: float = 0.012) -> np.ndarray:
     return tone * decay(t, tau) + 0.5 * click
 
 
-# ---- frequent, quiet events --------------------------------------------------
-
-def shot(focused: bool) -> np.ndarray:
-    duration = 0.05
+def brush(duration: float, low: float, high: float, thump: float) -> np.ndarray:
     t = t_axis(duration)
-    low, high, thump = (900, 2400, 520) if focused else (1400, 3800, 700)
-    brush = lowpass(band(noise(duration), low, high), 5000) * decay(t, 0.009)
-    return brush + 0.35 * np.sin(2 * np.pi * thump * t) * decay(t, 0.008)
+    flick = lowpass(band(noise(duration), low, high), 5000) * decay(t, 0.009)
+    return flick + 0.35 * np.sin(2 * np.pi * thump * t) * decay(t, 0.008)
 
 
-def enemy_puff(low: float, high: float, duration: float, tone: float) -> np.ndarray:
+def puff(low: float, high: float, duration: float, tone: float) -> np.ndarray:
     t = t_axis(duration)
     breath = band(noise(duration), low, high) * decay(t, duration * 0.3, 0.006)
     return breath + 0.4 * glide(t, tone, tone * 0.75) * decay(t, duration * 0.25, 0.004)
 
 
-def enemy_spiral() -> np.ndarray:
-    duration = 0.15
+def spiral_sweep(duration: float = 0.18) -> np.ndarray:
     t = t_axis(duration)
     source = noise(duration)
     sweep = t / t[-1]
     mixed = band(source, 1600, 2800) * (1 - sweep) + band(source, 600, 1200) * sweep
-    return mixed * decay(t, 0.05, 0.004) + 0.3 * glide(t, 640, 300) * decay(t, 0.04)
+    return mixed * decay(t, 0.05, 0.004)
 
 
-def graze() -> np.ndarray:
-    duration = 0.08
+def hiss(duration: float) -> np.ndarray:
     t = t_axis(duration)
-    hiss = band(noise(duration), 3500, 7000) * decay(t, 0.012)
-    chime = np.sin(2 * np.pi * 2637 * t) * decay(t, 0.02) + 0.3 * np.sin(2 * np.pi * 3951 * t) * decay(t, 0.012)
-    return 0.6 * hiss + 0.35 * chime
+    return band(noise(duration), 3500, 7000) * decay(t, 0.012)
 
 
-def enemy_hit() -> np.ndarray:
-    return wood(820, 0.05, 0.010)
-
-
-def ui_move() -> np.ndarray:
-    return wood(1320, 0.04, 0.006)
-
-
-# ---- medium events -----------------------------------------------------------
-
-def enemy_down() -> np.ndarray:
-    duration = 0.28
+def paper_burst(duration: float) -> np.ndarray:
     t = t_axis(duration)
     source = noise(duration)
     sweep = np.clip(t / 0.12, 0, 1)
-    paper = (lowpass(source, 6000) * (1 - sweep) + lowpass(source, 900) * sweep) * decay(t, 0.05, 0.002)
-    pon = glide(t, 330, 150, 0.6) * decay(t, 0.06, 0.002)
-    return 0.7 * paper + 0.6 * pon
+    return (lowpass(source, 6000) * (1 - sweep) + lowpass(source, 900) * sweep) * decay(t, 0.05, 0.002)
 
 
-def pickup(power_item: bool) -> np.ndarray:
-    if power_item:
-        return place(0.2, (0, 0.8, pluck(1046.5, 0.15, 0.6)), (0.035, 0.7, pluck(1568.0, 0.16, 0.7)))
-    return place(0.14, (0, 1.0, pluck(1568.0, 0.13, 0.7)))
-
-
-def confirm() -> np.ndarray:
-    return place(0.22, (0, 1.0, wood(1900, 0.08, 0.014)), (0.07, 0.9, wood(2300, 0.08, 0.014)),
-                 (0.07, 0.35, pluck(1174.7, 0.15, 0.5)))
-
-
-def pause() -> np.ndarray:
-    return place(0.18, (0, 1.0, wood(700, 0.1, 0.025)), (0.06, 0.6, wood(520, 0.1, 0.025)))
-
-
-def cancel() -> np.ndarray:
-    return place(0.16, (0, 0.9, wood(900, 0.08, 0.02)), (0.05, 0.7, wood(600, 0.1, 0.02)))
-
-
-def extend() -> np.ndarray:
-    notes = [784.0, 987.8, 1174.7, 1568.0]
-    parts = [(index * 0.07, 0.8, pluck(freq, 0.5, 0.6)) for index, freq in enumerate(notes)]
-    return place(1.0, *parts, (0.21, 0.35, bell(1568.0, 0.75, 0.4)))
-
-
-# ---- big events --------------------------------------------------------------
-
-def taiko(duration: float = 0.8) -> np.ndarray:
+def pon(duration: float) -> np.ndarray:
     t = t_axis(duration)
-    body = glide(t, 95, 52, 0.3) * decay(t, 0.25, 0.002)
-    skin = np.sin(2 * np.pi * 180 * t) * decay(t, 0.05, 0.001)
-    slap = lowpass(noise(duration), 1800) * decay(t, 0.015)
-    return body + 0.35 * skin + 0.4 * slap
+    return glide(t, 330, 150, 0.6) * decay(t, 0.06, 0.002)
 
 
-def gong(freq: float, duration: float, tau: float) -> np.ndarray:
-    return bell(freq, duration, tau, ratios=(1.0, 1.47, 2.09, 2.56, 3.21, 4.1))
-
-
-def bomb() -> np.ndarray:
-    duration = 1.8
+def wind(duration: float) -> np.ndarray:
     t = t_axis(duration)
     source = noise(duration)
-    progress = np.clip(t / 0.9, 0, 1)
-    wind = (band(source, 250, 700) * (1 - progress) + band(source, 900, 2600) * progress)
-    wind *= np.sin(np.pi * np.clip(t / 1.6, 0, 1)) ** 2
-    return place(duration, (0, 1.0, taiko(0.9)), (0, 0.55, wind), (0.02, 0.35, gong(150, 1.7, 0.9)))
+    progress = np.clip(t / (duration / 2), 0, 1)
+    gust = band(source, 250, 700) * (1 - progress) + band(source, 900, 2600) * progress
+    return gust * np.sin(np.pi * np.clip(t / (duration * 0.9), 0, 1)) ** 2
 
 
-def spell_declare() -> np.ndarray:
-    duration = 1.3
-    t = t_axis(0.3)
-    stamp = 0.9 * np.sin(2 * np.pi * 90 * t) * decay(t, 0.06, 0.001) + 0.6 * band(noise(0.3), 700, 3000) * decay(t, 0.02)
-    triad = [pitch("D5"), pitch("A5"), pitch("Eb6")]
-    plucks = [(0.09 + index * 0.05, 0.55, pluck(440 * 2 ** ((note - 69) / 12), 1.0, 0.7)) for index, note in enumerate(triad)]
-    return place(duration, (0, 1.0, stamp), *plucks, (0.2, 0.25, bell(1244.5, 1.0, 0.5)))
+def stamp(duration: float = 0.3) -> np.ndarray:
+    t = t_axis(duration)
+    return 0.9 * np.sin(2 * np.pi * 90 * t) * decay(t, 0.06, 0.001) + 0.6 * band(noise(duration), 700, 3000) * decay(t, 0.02)
 
 
-def phase_break() -> np.ndarray:
-    duration = 1.4
-    t = t_axis(0.2)
-    tear = band(noise(0.2), 2000, 6000) * (0.5 + 0.5 * np.sign(np.sin(2 * np.pi * 38 * t))) * decay(t, 0.06, 0.002)
-    chord = bell(1174.7, 1.3, 0.55) + 0.8 * bell(1760.0, 1.3, 0.45)
-    return place(duration, (0, 0.8, tear), (0, 0.9, taiko(0.6)), (0.03, 0.45, chord))
+def tear(duration: float = 0.2) -> np.ndarray:
+    t = t_axis(duration)
+    return band(noise(duration), 2000, 6000) * (0.5 + 0.5 * np.sign(np.sin(2 * np.pi * 38 * t))) * decay(t, 0.06, 0.002)
 
 
-def player_hit() -> np.ndarray:
-    duration = 0.8
+def pichuun() -> tuple:
+    """Short blip and a falling vibrato tone 1.4 kHz -> 180 Hz (the classic death cue)."""
     t_blip = t_axis(0.06)
     blip = np.tanh(3 * np.sin(2 * np.pi * 1760 * t_blip)) * decay(t_blip, 0.03, 0.001)
     t_fall = t_axis(0.7)
@@ -222,76 +163,140 @@ def player_hit() -> np.ndarray:
     freq = 1400 * (180 / 1400) ** (t_fall / t_fall[-1]) * vibrato
     fall = np.sin(2 * np.pi * np.cumsum(freq) / RATE) * decay(t_fall, 0.28, 0.004)
     burst = lowpass(noise(0.4), 3000) * decay(t_axis(0.4), 0.08)
-    return place(duration, (0, 0.5, blip), (0.04, 0.7, fall), (0.04, 0.45, burst), (0.04, 0.6, taiko(0.5)))
+    return blip, fall, burst
 
 
-# ---- jingles (FluidSynth) ------------------------------------------------------
+# ---- preset layers from the sheet render -------------------------------------------
 
-def jingle(name: str, bpm: float, parts: list, seconds: float) -> np.ndarray:
-    """parts: [(program, [(start_16th, len_16th, note_name, velocity)])]."""
-    song = Song(bpm, 4)
-    for channel, (program, notes) in enumerate(parts):
-        song.channel(channel, program, 110, 64, 70)
-        for start, length, note, velocity in notes:
-            song.add(channel, start, length, pitch(note), velocity)
-    midi_path = CACHE / f"jingle_{name}.mid"
-    wav_path = CACHE / f"jingle_{name}.wav"
-    song.write(midi_path, repeats=1)
-    subprocess.run(["fluidsynth", "-ni", "-q", "-C0", "-R1", "-g", "0.5", "-r", str(RATE),
-                    "-o", "audio.file.format=float", "-F", str(wav_path), SOUNDFONT, str(midi_path)], check=True)
-    _, data = wavfile.read(wav_path)
-    mono = data.astype(np.float64).mean(axis=1)[:int(seconds * RATE)]
-    fade = int(0.3 * RATE)
-    mono[-fade:] *= np.linspace(1, 0, fade) ** 2
-    return mono
+class Sheet:
+    """Dry stems of the SFX sheet; `cut` returns one event's window from one stem."""
 
+    def __init__(self) -> None:
+        self.windows = json.loads((SHEET / "windows.json").read_text())
+        self.stems = {}
 
-def stage_clear() -> np.ndarray:
-    koto = [(0, 2, "A4", 90), (2, 2, "C5", 90), (4, 2, "E5", 95), (6, 2, "A5", 100), (8, 12, "E6", 105)]
-    pad = [(0, 20, "A3", 70), (0, 20, "E4", 70), (8, 12, "C#5", 70)]
-    return jingle("stage_clear", 120, [(107, koto), (49, pad)], 2.6)
+    def _stem(self, sound: str) -> np.ndarray:
+        if sound not in self.stems:
+            data, rate = soundfile.read(SHEET / "stems" / f"{sound}.wav", dtype="float64")
+            if rate != RATE:
+                raise SystemExit(f"{sound}: unexpected rate {rate}")
+            self.stems[sound] = data
+        return self.stems[sound]
 
-
-def game_clear() -> np.ndarray:
-    koto = [(0, 2, "G4", 90), (2, 2, "A4", 90), (4, 2, "B4", 92), (6, 2, "D5", 95), (8, 2, "E5", 98),
-            (10, 2, "G5", 100), (12, 4, "A5", 104), (16, 16, "G5", 108)]
-    flute = [(8, 8, "D6", 80), (16, 16, "B5", 84)]
-    pad = [(0, 16, "C4", 64), (0, 16, "E4", 64), (0, 16, "G4", 64), (16, 16, "G3", 70), (16, 16, "D4", 70), (16, 16, "B4", 70)]
-    bells = [(16, 16, "G5", 70)]
-    return jingle("game_clear", 112, [(107, koto), (77, flute), (49, pad), (14, bells)], 4.2)
+    def cut(self, event: str, sound: str, seconds: float, stereo: bool = False) -> np.ndarray:
+        start, length = self.windows[event]
+        first = int(start * RATE)
+        piece = self._stem(sound)[first:first + int(min(seconds, length) * RATE)]
+        if not np.any(piece):
+            raise SystemExit(f"{event}/{sound}: silent layer")
+        return piece if stereo else piece.mean(axis=1)
 
 
-def game_over() -> np.ndarray:
-    flute = [(0, 4, "A5", 90), (4, 2, "G5", 84), (6, 2, "Eb5", 80), (8, 4, "D5", 84), (12, 12, "D4", 80)]
-    koto = [(0, 2, "D3", 80), (8, 2, "Bb2", 76), (12, 12, "D2", 84)]
-    return jingle("game_over", 84, [(77, flute), (107, koto)], 3.6)
+def fx(samples: np.ndarray, *plugins) -> np.ndarray:
+    board = pedalboard.Pedalboard(list(plugins))
+    data = samples.T if samples.ndim == 2 else samples[None, :]
+    out = board(data.astype(np.float32), RATE, reset=True).astype(np.float64)
+    return out.T if samples.ndim == 2 else out[0]
 
 
-SOUNDS = {
-    "shot": lambda: shot(False), "shot_focus": lambda: shot(True),
-    "enemy_fire": lambda: enemy_puff(700, 1800, 0.09, 520), "enemy_ring": lambda: enemy_puff(400, 1200, 0.13, 330),
-    "enemy_spiral": enemy_spiral, "graze": graze, "enemy_hit": enemy_hit, "enemy_down": enemy_down,
-    "pickup": lambda: pickup(False), "pickup_power": lambda: pickup(True), "extend": extend,
-    "ui_move": ui_move, "confirm": confirm, "pause": pause, "cancel": cancel,
-    "bomb": bomb, "spell_declare": spell_declare, "phase_break": phase_break, "player_hit": player_hit,
-    "stage_clear": stage_clear, "game_clear": game_clear, "game_over": game_over,
-}
+def build(sheet: Sheet) -> dict:
+    cut = sheet.cut
+    hp = pedalboard.HighpassFilter
+    room = pedalboard.Reverb(room_size=0.35, wet_level=0.12, dry_level=0.9)
+    hall = pedalboard.Reverb(room_size=0.8, wet_level=0.25, dry_level=0.85, width=1.0)
+    sounds = {
+        "shot": lambda: place(0.06, (0, 1.0, brush(0.05, 1400, 3800, 700)), (0, 0.15, cut("shot", "ceramic", 0.06))),
+        "shot_focus": lambda: place(0.06, (0, 1.0, brush(0.05, 900, 2400, 520)), (0, 0.15, cut("shot_focus", "ceramic", 0.06))),
+        "enemy_fire": lambda: place(0.12, (0, 0.8, cut("enemy_fire", "harp_wire", 0.12)), (0, 0.5, puff(700, 1800, 0.09, 520))),
+        "enemy_ring": lambda: place(0.18, (0, 0.8, cut("enemy_ring", "harp_wire", 0.18)), (0, 0.55, puff(400, 1200, 0.13, 330))),
+        "enemy_spiral": lambda: place(0.2, (0, 0.8, cut("enemy_spiral", "harp_wire", 0.2)), (0, 0.45, spiral_sweep())),
+        "graze": lambda: place(0.1, (0, 0.6, hiss(0.08)), (0, 0.7, cut("graze", "ceramic", 0.1))),
+        "enemy_hit": lambda: place(0.07, (0, 0.8, cut("enemy_hit", "gm_kit", 0.07)), (0, 0.6, wood(820, 0.05, 0.010))),
+        "enemy_down": lambda: place(0.4, (0, 0.6, paper_burst(0.28)), (0, 0.5, pon(0.28)),
+                                    (0, 0.7, fx(cut("enemy_down", "guzheng", 0.4), hp(cutoff_frequency_hz=150))),
+                                    (0, 0.5, cut("enemy_down", "gm_kit", 0.1))),
+        "pickup": lambda: place(0.2, (0, 1.0, cut("pickup", "guzheng", 0.2)), (0, 0.35, cut("pickup", "ceramic", 0.1))),
+        "pickup_power": lambda: place(0.26, (0, 1.0, cut("pickup_power", "guzheng", 0.26)), (0, 0.35, cut("pickup_power", "ceramic", 0.15))),
+        "extend": lambda: fx(place(1.1, (0, 1.0, cut("extend", "guzheng", 1.1)), (0.21, 0.55, cut("extend", "wudang", 0.89)[int(0.21 * RATE):])), room),
+        "ui_move": lambda: place(0.05, (0, 0.6, wood(1320, 0.04, 0.006)), (0, 0.6, cut("ui_move", "ceramic", 0.05)),
+                                 (0, 0.4, cut("ui_move", "gm_kit", 0.05))),
+        "confirm": lambda: place(0.26, (0, 1.0, cut("confirm", "gm_kit", 0.26)), (0.07, 0.5, cut("confirm", "guzheng", 0.26)[int(0.07 * RATE):])),
+        "pause": lambda: place(0.2, (0, 1.0, cut("pause", "gm_kit", 0.2)), (0, 0.4, wood(700, 0.1, 0.025))),
+        "cancel": lambda: place(0.18, (0, 1.0, cut("cancel", "gm_kit", 0.18)), (0.05, 0.35, wood(600, 0.1, 0.02))),
+        "bomb": lambda: place(1.8, (0, 1.0, cut("bomb", "gm_taiko", 1.2)), (0, 0.45, wind(1.8)),
+                              (0.02, 0.6, cut("bomb", "wudang", 1.8)[int(0.02 * RATE):])),
+        "spell_declare": lambda: fx(place(1.4, (0, 0.7, stamp()), (0, 0.8, cut("spell_declare", "gm_taiko", 0.6)),
+                                          (0.09, 0.75, cut("spell_declare", "guzheng", 1.4)[int(0.09 * RATE):]),
+                                          (0.2, 0.4, cut("spell_declare", "wudang", 1.4)[int(0.2 * RATE):])), room),
+        "phase_break": lambda: place(1.4, (0, 0.6, tear()), (0, 0.85, cut("phase_break", "gm_taiko", 0.6)),
+                                     (0.03, 0.6, cut("phase_break", "wudang", 1.4)[int(0.03 * RATE):])),
+        "player_hit": lambda: _player_hit(cut),
+        "stage_clear": lambda: _jingle(cut, "stage_clear", 2.8, {"guzheng": 1.0, "strings": 0.5, "wudang": 0.35}, hall),
+        "game_clear": lambda: _jingle(cut, "game_clear", 4.4, {"guzheng": 1.0, "pan_flute": 0.6, "strings": 0.5, "wudang": 0.35}, hall),
+        "game_over": lambda: _jingle(cut, "game_over", 3.8, {"pan_flute": 0.9, "guzheng": 0.8, "wudang": 0.3}, hall),
+    }
+    return sounds
+
+
+def _player_hit(cut) -> np.ndarray:
+    blip, fall, burst = pichuun()
+    return place(0.8, (0, 0.45, blip), (0, 0.35, cut("player_hit", "harp_wire", 0.1)), (0.04, 0.7, fall),
+                 (0.04, 0.4, burst), (0.04, 0.7, cut("player_hit", "gm_taiko", 0.76)[int(0.04 * RATE):]))
+
+
+def _jingle(cut, event: str, seconds: float, gains: dict, reverb) -> np.ndarray:
+    parts = [(0, gain, cut(event, sound, seconds, stereo=True)) for sound, gain in gains.items()]
+    mixed = fx(place(seconds, *parts, channels=2), pedalboard.HighpassFilter(cutoff_frequency_hz=60), reverb)
+    fade = int(0.35 * RATE)
+    mixed[-fade:] *= (np.linspace(1, 0, fade) ** 2)[:, None]
+    return mixed
+
+
+# ---- levels -------------------------------------------------------------------
+
+def true_peak_db(samples: np.ndarray) -> float:
+    up = signal.resample_poly(samples, 4, 1, axis=0)
+    return float(20 * np.log10(max(np.max(np.abs(up)), 1e-9)))
+
+
+def loudness(samples: np.ndarray) -> float:
+    minimum = int(MEASURE_MIN * RATE)
+    if len(samples) < minimum:
+        pad = [(0, minimum - len(samples))] + [(0, 0)] * (samples.ndim - 1)
+        samples = np.pad(samples, pad)
+    return float(pyloudnorm.Meter(RATE).integrated_loudness(samples))
 
 
 def finish(samples: np.ndarray) -> np.ndarray:
-    fade = min(len(samples) // 4, int(0.01 * RATE))
-    samples = samples - np.mean(samples)
-    samples[-fade:] *= np.linspace(1, 0, fade)
-    return samples * (PEAK / np.max(np.abs(samples)))
+    """No DC, -16 LUFS (short effects measured over 400 ms), never above -1 dBTP."""
+    samples = samples - np.mean(samples, axis=0)
+    samples = taper(samples, 0.01)
+    gain_db = TARGET_LUFS - loudness(samples)
+    samples = samples * 10 ** (gain_db / 20)
+    over = true_peak_db(samples) - CEILING_DBTP
+    if over > 0:
+        samples = samples * 10 ** (-over / 20)
+    return samples
+
+
+def write_wav16(samples: np.ndarray, target: pathlib.Path) -> None:
+    pcm = np.clip(np.round(samples * 32767.0), -32768, 32767).astype(np.int16)
+    soundfile.write(target, pcm, RATE, subtype="PCM_16")
 
 
 def main() -> None:
     OUT.mkdir(parents=True, exist_ok=True)
-    CACHE.mkdir(parents=True, exist_ok=True)
-    for name, build in SOUNDS.items():
-        samples = finish(build())
-        write_wav16(samples, RATE, OUT / f"{name}.wav")
-        print(f"{name}: {len(samples) / RATE:.2f}s")
+    sounds = build(Sheet())
+    report = {}
+    for name, make in sounds.items():
+        samples = finish(make())
+        if name not in JINGLES and samples.ndim != 1:
+            raise SystemExit(f"{name}: effects must be mono")
+        write_wav16(samples, OUT / f"{name}.wav")
+        report[name] = {"seconds": round(len(samples) / RATE, 3), "lufs": round(loudness(samples), 1),
+                        "true_peak": round(true_peak_db(samples), 1)}
+        print(f"{name:14s} {report[name]}")
+    (SHEET / "levels.json").write_text(json.dumps(report, indent=1))
 
 
 if __name__ == "__main__":

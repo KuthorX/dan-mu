@@ -10,7 +10,7 @@
 - 道具吸附、残机与复活无敌、Bomb 清弹与压 Boss
 - 两关杂兵波次、两名多阶段 Boss、阶段间转场
 - 程序化背景、程序化子弹/敌机/特效绘制
-- **原创配乐与音效**：6 首可无缝循环的和风曲目（筝、三味线、尺八、太鼓）与 22 个音效，均由 `tools/audio/` 中的代码生成，见 `docs/audio-direction.md`
+- **原创配乐与音效**：6 首可无缝循环的和风曲目（拨弦、笛 / 排箫、太鼓、寺钟）与 22 个音效，由 AI（Claude）以代码作曲与编配（`tools/audio/`），使用 Vital / Serum 2 / MS Basic 音色库离线渲染，见 `docs/audio-direction.md`
 
 ## 语言 / Language
 
@@ -58,4 +58,10 @@
 
 ## 说明
 
-美术与音频资源全部由仓库内脚本生成（`tools/art/`、`tools/audio/`）。音乐使用 MIT 许可的 MuseScore MS Basic 音色库渲染，许可见 `audio/MS-Basic-soundfont-LICENSE.md`。
+美术与音频资源全部由仓库内脚本生成（`tools/art/`、`tools/audio/`）。
+
+音频 / Audio: music & SFX composed programmatically by AI (Claude) and rendered with Vital / Serum 2 / MS Basic soundfont.
+- Vital (Matt Tytel, GPL-3.0 synth) presets: Factory "Plucked String", Yuli Yolo "A Night in Kalyan", In The Mix "Strings Section", Billain "Cinema Bells", Databroth "Ceramic".
+- Serum 2 (Xfer Records) factory presets: Pan Flute, Flute, Harp Wire, Wudang Mountain, Bamboo Forest Reflections, Strings Ensemble - Elegy, Ghost Voices.
+- MuseScore MS Basic soundfont (MIT, derived from FluidR3), licence in `audio/MS-Basic-soundfont-LICENSE.md`.
+- Details and the regeneration commands are in `docs/audio-direction.md`.

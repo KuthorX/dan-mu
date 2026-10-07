@@ -1,7 +1,8 @@
 """The DanMu score: six looping cues written as note strings (see music_lib.py).
 
-Instruments are General MIDI programs rendered with MuseScore's MS Basic soundfont:
-koto 107, shamisen 106, shakuhachi 77, taiko 116, strings, fretless/fingered bass.
+The GM programs below describe each part's role (koto 107, shamisen 106, shakuhachi 77,
+taiko 116, strings, bass). rescore.py re-orchestrates the parts for Vital / Serum 2 presets
+and MS Basic (see ARRANGEMENTS there); the programs themselves are not rendered.
 """
 from music_lib import Song, arpeggio, bass, drums, hits, pad, stabs
 

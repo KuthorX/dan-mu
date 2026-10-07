@@ -2,6 +2,7 @@ extends Node
 
 ## Plays DanMu's music cues and sound effects. The assets are rendered offline by
 ## tools/audio/ (see docs/audio-direction.md); this node only routes events to them.
+## Effect files are normalised to -16 LUFS, so the per-event levels below set the mix.
 
 const MUSIC := {
 	"title": preload("res://audio/music/title.mp3"),
@@ -38,7 +39,7 @@ const SFX := {
 ## Stages 1-3 share the shrine-road theme; 4, 5 and endless use the lantern procession.
 const STAGE_CUES := {1: "stage_a", 2: "stage_a", 3: "stage_a", 4: "stage_b", 5: "stage_b"}
 const BGM_VOLUME_DB := -2.0
-const JINGLE_VOLUME_DB := -4.0
+const JINGLE_VOLUME_DB := -5.0
 const SFX_VOICES := 10
 ## Bus names from res://default_bus_layout.tres; volumes are set by scripts/audio_settings.gd.
 ## Jingles (stage clear, game over) stand in for the music, so they share its bus.
@@ -103,59 +104,59 @@ func stop_bgm() -> void:
 		bgm_player.stop()
 
 func play_ui_move() -> void:
-	_play_sfx("ui_move", 0.03, -12.0)
+	_play_sfx("ui_move", 0.03, -18.0)
 
 func play_confirm() -> void:
-	_play_sfx("confirm", 0.05, -8.0)
+	_play_sfx("confirm", 0.05, -7.5)
 
 func play_cancel() -> void:
-	_play_sfx("cancel", 0.05, -9.0)
+	_play_sfx("cancel", 0.05, -9.5)
 
 func play_pause() -> void:
-	_play_sfx("pause", 0.05, -8.0)
+	_play_sfx("pause", 0.05, -6.5)
 
 ## Fires many times per second, so it sits far below the music.
 func play_player_shot(focus_ratio: float) -> void:
 	if focus_ratio > 0.55:
-		_play_sfx("shot_focus", 0.06, -21.0)
+		_play_sfx("shot_focus", 0.06, -22.5)
 	else:
-		_play_sfx("shot", 0.06, -22.0)
+		_play_sfx("shot", 0.06, -23.0)
 
 func play_enemy_fire(pattern: StringName) -> void:
 	match pattern:
 		&"spiral", &"burst_ring":
-			_play_sfx("enemy_spiral", 0.12, -19.0)
+			_play_sfx("enemy_spiral", 0.12, -25.5)
 		&"ring", &"wall":
-			_play_sfx("enemy_ring", 0.18, -18.0)
+			_play_sfx("enemy_ring", 0.18, -23.0)
 		_:
-			_play_sfx("enemy_fire", 0.1, -20.0)
+			_play_sfx("enemy_fire", 0.1, -26.0)
 
 func play_graze() -> void:
-	_play_sfx("graze", 0.035, -15.0)
+	_play_sfx("graze", 0.035, -18.0)
 
 func play_enemy_hit() -> void:
-	_play_sfx("enemy_hit", 0.08, -20.0)
+	_play_sfx("enemy_hit", 0.08, -22.5)
 
 func play_pickup(power_item: bool) -> void:
-	_play_sfx("pickup_power" if power_item else "pickup", 0.035, -13.0 if power_item else -14.0)
+	_play_sfx("pickup_power" if power_item else "pickup", 0.035, -18.0 if power_item else -20.5)
 
 func play_extend() -> void:
-	_play_sfx("extend", 0.3, -5.0)
+	_play_sfx("extend", 0.3, -3.5)
 
 func play_enemy_down() -> void:
-	_play_sfx("enemy_down", 0.03, -10.0)
+	_play_sfx("enemy_down", 0.03, -12.0)
 
 func play_player_hit() -> void:
 	_play_sfx("player_hit", 0.1, -3.0)
 
 func play_bomb() -> void:
-	_play_sfx("bomb", 0.12, -3.0)
+	_play_sfx("bomb", 0.12, -6.0)
 
 func play_spell_declare() -> void:
 	_play_sfx("spell_declare", 0.3, -4.0)
 
 func play_phase_break() -> void:
-	_play_sfx("phase_break", 0.18, -4.0)
+	_play_sfx("phase_break", 0.18, -3.5)
 
 func play_stage_transition() -> void:
 	_play_jingle("stage_clear")
