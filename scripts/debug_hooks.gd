@@ -82,6 +82,8 @@ func _start_stage(stage_number: int) -> void:
 	game.start_new_game()
 	if stage_number > 1:
 		game._begin_stage(stage_number)
+	# the cheat only keeps the run alive; the strip shows an ordinary stock, not × 99
+	game.lives = 3
 	game.power = 120.0
 	Input.action_press(&"shoot")
 	Input.action_press(&"focus")
