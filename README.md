@@ -10,7 +10,7 @@
 - 道具吸附、残机与复活无敌、Bomb 清弹与压 Boss
 - 两关杂兵波次、两名多阶段 Boss、阶段间转场
 - 程序化背景、程序化子弹/敌机/特效绘制
-- **程序化音效与 BGM**，无外部音频资源依赖
+- **原创配乐与音效**：6 首可无缝循环的和风曲目（筝、三味线、尺八、太鼓）与 22 个音效，均由 `tools/audio/` 中的代码生成，见 `docs/audio-direction.md`
 
 ## 语言 / Language
 
@@ -46,11 +46,11 @@
 - `scripts/hud.gd`：HUD、菜单、转场、结算
 - `scripts/background.gd`：双主题程序化背景
 - `scripts/effect.gd`：爆炸、冲击波、火花特效
-- `scripts/audio_manager.gd`：程序化 BGM 与音效
+- `scripts/audio_manager.gd`：BGM 与音效调度（资源在 `audio/`，生成脚本在 `tools/audio/`）
 - `scripts/pickup.gd`：点数/火力道具
 - `scripts/i18n.gd`：语言选择、切换与保存
 - `i18n/translations.csv`：中英文翻译表
 
 ## 说明
 
-本项目当前不依赖外部美术与音频资源，主要目标是把手感、流程、弹幕可读性和完成度先做出来。
+美术与音频资源全部由仓库内脚本生成（`tools/art/`、`tools/audio/`）。音乐使用 MIT 许可的 MuseScore MS Basic 音色库渲染，许可见 `audio/MS-Basic-soundfont-LICENSE.md`。

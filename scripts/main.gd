@@ -293,6 +293,7 @@ func _unhandled_input(event: InputEvent) -> void:
 			_advance_dialogue()
 		else:
 			hud.reveal_dialogue_line()
+		audio.play_ui_move()
 		get_viewport().set_input_as_handled()
 		return
 	if event.is_action_pressed(&"pause"):
@@ -321,6 +322,7 @@ func _unhandled_input(event: InputEvent) -> void:
 		return
 	if event.is_action_pressed(&"bomb"):
 		if state == GameState.PAUSED:
+			audio.play_cancel()
 			_return_to_title()
 			get_viewport().set_input_as_handled()
 
@@ -592,8 +594,7 @@ func finish_run(victory: bool) -> void:
 	_save_best_score()
 	hud.show_result(victory, score, best_score)
 	hud.set_boss_state(false, 0.0, 1.0, "")
-	if victory:
-		audio.play_game_clear()
+	audio.play_results(victory)
 	_update_hud()
 
 func _clear_combat_layers(keep_player: bool) -> void:
@@ -840,7 +841,7 @@ func _toggle_language() -> void:
 	I18n.toggle_locale()
 	_apply_window_title()
 	hud.show_title(best_score, get_difficulty_labels(), difficulty_index, get_ship_label(), get_ship_description(), _menu_mode_label(), _menu_mode_description(), _endless_board_title(), _endless_board_text())
-	audio.play_confirm()
+	audio.play_ui_move()
 	_update_hud()
 
 func _apply_window_title() -> void:
@@ -865,7 +866,7 @@ func _difficulty_label_for(value: String) -> String:
 func _cycle_menu_mode() -> void:
 	menu_mode_index = 1 - menu_mode_index
 	hud.update_title_menu(get_difficulty_labels(), difficulty_index, get_ship_label(), get_ship_description(), _menu_mode_label(), _menu_mode_description(), _endless_board_title(), _endless_board_text())
-	audio.play_confirm()
+	audio.play_ui_move()
 	_update_hud()
 
 func _record_endless_result() -> void:
@@ -1035,7 +1036,7 @@ func _cycle_reward_selection(direction: int) -> void:
 		return
 	reward_index = posmod(reward_index + direction, reward_options.size())
 	_update_reward_selection_ui(false)
-	audio.play_confirm()
+	audio.play_ui_move()
 
 func _refresh_reward_selection() -> void:
 	if state != GameState.REWARD or reward_refreshes <= 0 or reward_intro_timer > 0.0:
@@ -1047,7 +1048,7 @@ func _refresh_reward_selection() -> void:
 	reward_input_armed = false
 	_update_reward_selection_ui(true)
 	hud.flash(Color(0.92, 0.82, 1.0), 0.18, 0.2)
-	audio.play_confirm()
+	audio.play_ui_move()
 
 func _confirm_reward_selection() -> void:
 	if reward_intro_timer > 0.0 or reward_options.is_empty() or reward_index < 0 or reward_index >= reward_options.size():
@@ -1091,6 +1092,7 @@ func _apply_reward_option(option: Dictionary) -> void:
 		"vital_core":
 			if lives < 6:
 				lives += 1
+				audio.play_extend()
 			else:
 				add_score(50000)
 		"magnet_field":
@@ -1106,6 +1108,8 @@ func _apply_reward_option(option: Dictionary) -> void:
 			var bomb_before: int = bombs
 			lives = min(6, lives + 1)
 			bombs = min(6, bombs + 1)
+			if lives > life_before:
+				audio.play_extend()
 			if lives == life_before and bombs == bomb_before:
 				add_score(80000)
 		_:
@@ -1114,13 +1118,13 @@ func _apply_reward_option(option: Dictionary) -> void:
 func _cycle_difficulty(direction: int) -> void:
 	difficulty_index = posmod(difficulty_index + direction, DIFFICULTIES.size())
 	hud.update_title_menu(get_difficulty_labels(), difficulty_index, get_ship_label(), get_ship_description(), _menu_mode_label(), _menu_mode_description(), _endless_board_title(), _endless_board_text())
-	audio.play_confirm()
+	audio.play_ui_move()
 	_update_hud()
 
 func _cycle_ship(direction: int) -> void:
 	ship_index = posmod(ship_index + direction, PLAYER_SHIPS.size())
 	hud.update_title_menu(get_difficulty_labels(), difficulty_index, get_ship_label(), get_ship_description(), _menu_mode_label(), _menu_mode_description(), _endless_board_title(), _endless_board_text())
-	audio.play_confirm()
+	audio.play_ui_move()
 	_update_hud()
 
 func register_bullet(bullet) -> void:
@@ -1296,12 +1300,14 @@ func try_player_bullet_hit(bullet) -> bool:
 			if bullet.global_position.distance_squared_to(boss_entry.global_position) <= pow(boss_entry.radius + bullet.radius, 2.0):
 				if boss_entry.take_damage(bullet.damage):
 					add_score(10)
+					audio.play_enemy_hit()
 				return true
 	for enemy in enemies.duplicate():
 		if is_instance_valid(enemy) and enemy.is_targetable():
 			if bullet.global_position.distance_squared_to(enemy.global_position) <= pow(enemy.radius + bullet.radius, 2.0):
 				enemy.take_damage(bullet.damage)
 				add_score(4)
+				audio.play_enemy_hit()
 				return true
 	return false
 
@@ -1599,7 +1605,7 @@ func on_boss_phase_changed(phase_name: String, current_hp: float, max_hp_value: 
 		hud.flash(pulse_color, 0.32, 0.26)
 		background.trigger_pulse(pulse_color, 0.18, 0.26)
 		hud.show_boss_spotlight(spotlight_config, 2.15 if _is_last_boss_phase(phase_name) else 1.75)
-		audio.play_phase_break()
+		audio.play_spell_declare()
 
 func _is_last_boss_phase(phase_name: String) -> bool:
 	var phases: Array = current_boss_config.get("phases", [])

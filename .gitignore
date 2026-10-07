@@ -18,3 +18,6 @@ data_*/
 mono_crash.*.json
 # Art tool download cache
 tools/art/.cache/
+# Audio tool render cache
+tools/audio/.cache/
+__pycache__/
