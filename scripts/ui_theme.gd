@@ -4,7 +4,7 @@ extends RefCounted
 ## Ink on bone washi for anything on paper; paper-white with an ink keyline for
 ## anything floating over the playfield, so text never fights the bullets.
 
-const BodyFont = preload("res://fonts/NotoSansCJKsc-Regular.otf")
+const BodyFont = preload("res://fonts/NotoSansCJKsc-Regular-subset.otf")
 const SerifFont = preload("res://fonts/NotoSerifSC-Bold-subset.ttf")
 const BrushFont = preload("res://fonts/MaShanZheng-subset.ttf")
 

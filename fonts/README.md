@@ -1,11 +1,18 @@
 # 本地中文字体
 
-- 文件：`NotoSansCJKsc-Regular.otf`
-- 用途：作为项目默认中文 UI 字体，确保导出到 Web 时不会因为宿主环境缺字而乱码。
-- 来源：`notofonts/noto-cjk`
-- 下载地址：`https://github.com/notofonts/noto-cjk`
+| 文件 | 用途 | 来源 | 许可 |
+| --- | --- | --- | --- |
+| `NotoSansCJKsc-Regular-subset.otf` | 默认 UI 字体与所有 Label 的回退字体 | [notofonts/noto-cjk](https://github.com/notofonts/noto-cjk) | `licenses/NotoSansCJK-OFL.txt` |
+| `NotoSerifSC-Bold-subset.ttf` | 正文与数字 | Google Fonts `notoserifsc` | `licenses/NotoSerifSC-OFL.txt` |
+| `MaShanZheng-subset.ttf` | 书法标题 | Google Fonts `mashanzheng` | `licenses/MaShanZheng-OFL.txt` |
 
-说明：
+三份字体都只保留 `i18n/translations.csv`、`scripts/*.gd`、`scenes/*.tscn` 中出现的字符和可打印 ASCII，
+以减小导出包体积（完整的 Noto Sans CJK SC 有 16 MB，子集约 260 KB）。
 
-- 当前项目中的 `scripts/hud.gd` 会默认使用这份字体渲染所有运行时创建的标签。
-- 如果后续要替换字体，优先保留可商用、可再分发的开源中文字体，并继续使用本地打包方式。
+新增文案后重新生成：
+
+```
+https_proxy=http://127.0.0.1:7890 python3 tools/art/subset_fonts.py
+```
+
+脚本最后会打印子集字体缺失的字形数，应为 0。
