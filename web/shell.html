@@ -1,0 +1,379 @@
+<!DOCTYPE html>
+<html lang="en">
+	<head>
+		<meta charset="utf-8">
+		<meta name="viewport" content="width=device-width, user-scalable=no, initial-scale=1.0">
+		<meta name="theme-color" content="#130807">
+		<title>$GODOT_PROJECT_NAME</title>
+		<style>
+/* Boot screen in the "hanging scroll at night" art direction (docs/art-direction.md):
+   dark ink-wash sky, a rice-paper ofuda strip, the brush title 弹幕, and vermilion
+   used only for the progress stroke, the seal and errors. The base colour matches
+   default_clear_color / boot_splash bg_color so there is no flash between stages. */
+:root {
+	--night: #130807;
+	--paper: #e6d9bf;
+	--paper-dim: rgba(230, 217, 191, 0.55);
+	--ink: #1a1210;
+	--vermilion: #d9442b;
+	--brush: 'Kaiti SC', 'STKaiti', 'KaiTi', 'BiauKai', 'Xingkai SC', 'STXingkai', serif;
+	--serif: 'Songti SC', 'STSong', 'SimSun', Georgia, 'Times New Roman', serif;
+}
+
+html, body, #canvas {
+	margin: 0;
+	padding: 0;
+	border: 0;
+}
+
+html, body {
+	width: 100%;
+	height: 100%;
+	background-color: var(--night);
+}
+
+body {
+	color: var(--paper);
+	overflow: hidden;
+	touch-action: none;
+}
+
+#canvas {
+	display: block;
+}
+
+#canvas:focus {
+	outline: none;
+}
+
+#status {
+	position: absolute;
+	inset: 0;
+	display: flex;
+	justify-content: center;
+	align-items: center;
+	/* Ink-wash night: soft washes of diluted ink over the clear colour. */
+	background:
+		radial-gradient(ellipse 60% 40% at 22% 18%, rgba(70, 60, 90, 0.22), transparent 70%),
+		radial-gradient(ellipse 70% 35% at 80% 95%, rgba(0, 0, 0, 0.55), transparent 70%),
+		radial-gradient(ellipse 45% 30% at 85% 25%, rgba(230, 217, 191, 0.05), transparent 70%),
+		var(--night);
+	z-index: 1;
+	transition: opacity 0.3s ease-out;
+}
+
+#status.done {
+	opacity: 0;
+	pointer-events: none;
+}
+
+#boot {
+	display: flex;
+	align-items: stretch;
+	gap: clamp(24px, 5vw, 56px);
+	height: min(62vh, 520px);
+}
+
+/* The ofuda strip: torn rice paper; the vermilion line is drawn down its spine. */
+#boot-strip {
+	position: relative;
+	width: clamp(54px, 7vh, 72px);
+	background: var(--paper);
+	clip-path: polygon(6% 0, 30% 1.2%, 55% 0.2%, 80% 1.4%, 100% 0.4%, 97% 50%, 100% 99.4%,
+		72% 98.6%, 45% 100%, 20% 98.8%, 0 99.6%, 3% 50%);
+	box-shadow: none;
+}
+
+#boot-strip::before {
+	/* Faint printed frame like a talisman border. */
+	content: '';
+	position: absolute;
+	inset: 10px 8px;
+	border: 1px solid rgba(26, 18, 16, 0.28);
+}
+
+#boot-track {
+	position: absolute;
+	left: 50%;
+	top: 22px;
+	bottom: 22px;
+	width: 5px;
+	margin-left: -2.5px;
+	background: rgba(26, 18, 16, 0.12);
+	overflow: hidden;
+}
+
+#boot-fill {
+	position: absolute;
+	left: 0;
+	right: 0;
+	top: 0;
+	height: 0;
+	background: var(--vermilion);
+	border-radius: 0 0 4px 4px;
+	transition: height 0.2s linear;
+}
+
+#boot-bar.indeterminate #boot-fill {
+	height: 22% !important;
+	animation: drip 1.6s ease-in-out infinite;
+}
+
+@keyframes drip {
+	from { top: -22%; }
+	to { top: 100%; }
+}
+
+#boot-text {
+	display: flex;
+	flex-direction: column;
+	justify-content: center;
+	min-width: min(360px, 52vw);
+}
+
+#boot-title {
+	display: block;
+	width: clamp(180px, 28vw, 300px);
+	height: auto;
+	margin: 0 0 2px -6px;
+}
+
+#boot-title text {
+	font-family: var(--brush);
+	font-weight: 700;
+	fill: var(--paper);
+}
+
+#boot-subtitle {
+	margin: 0 0 28px;
+	font-family: var(--serif);
+	font-size: clamp(16px, 2.2vw, 20px);
+	letter-spacing: 0.32em;
+	color: var(--paper-dim);
+}
+
+#boot-row {
+	display: flex;
+	align-items: baseline;
+	gap: 16px;
+	font-family: var(--serif);
+	font-size: 20px;
+	color: var(--paper);
+}
+
+#boot-pct, #boot-mb {
+	font-family: ui-monospace, Menlo, Consolas, monospace;
+	font-size: 13px;
+	font-variant-numeric: tabular-nums;
+	color: var(--paper-dim);
+}
+
+#boot-seal {
+	width: 44px;
+	height: 44px;
+	margin-top: 22px;
+}
+
+#boot-notice {
+	display: none;
+	max-width: min(440px, 60vw);
+	color: var(--vermilion);
+	font-family: var(--serif);
+	font-size: 17px;
+	line-height: 1.5;
+	white-space: pre-wrap;
+	word-break: break-word;
+}
+
+#boot-notice b {
+	font-size: 22px;
+}
+
+#status.error #boot-row {
+	display: none;
+}
+
+#status.error #boot-notice {
+	display: block;
+}
+
+#status.error #boot-fill {
+	animation: none;
+	top: 0;
+	height: 100% !important;
+	opacity: 0.35;
+}
+		</style>
+		$GODOT_HEAD_INCLUDE
+	</head>
+	<body>
+		<canvas id="canvas">
+			Your browser does not support the canvas tag.
+		</canvas>
+
+		<noscript>
+			Your browser does not support JavaScript.
+		</noscript>
+
+		<div id="status">
+			<div id="boot">
+				<div id="boot-strip" aria-hidden="true">
+					<div id="boot-bar" class="indeterminate">
+						<div id="boot-track"><div id="boot-fill"></div></div>
+					</div>
+				</div>
+				<div id="boot-text">
+					<!-- Brush title: local kaishu font roughened by an SVG filter for dry-brush edges. -->
+					<svg id="boot-title" viewBox="0 0 300 140" role="img" aria-label="弹幕 DanMu">
+						<defs>
+							<filter id="dry-brush" x="-5%" y="-5%" width="110%" height="110%">
+								<feTurbulence type="fractalNoise" baseFrequency="0.9 0.06" numOctaves="2" seed="7" result="grain"/>
+								<feDisplacementMap in="SourceGraphic" in2="grain" scale="5" xChannelSelector="R" yChannelSelector="G" result="rough"/>
+								<feTurbulence type="fractalNoise" baseFrequency="0.05 1.6" numOctaves="1" seed="3" result="streak"/>
+								<feColorMatrix in="streak" type="matrix" values="0 0 0 0 0  0 0 0 0 0  0 0 0 0 0  0 0 0 -1.5 1.5" result="mask"/>
+								<feComposite in="rough" in2="mask" operator="in"/>
+							</filter>
+						</defs>
+						<text x="0" y="118" font-size="128" filter="url(#dry-brush)">弹幕</text>
+					</svg>
+					<p id="boot-subtitle">DanMu · 边界幻想</p>
+					<div id="boot-row">
+						<span id="boot-label">Loading…</span>
+						<span><span id="boot-pct"></span> <span id="boot-mb"></span></span>
+					</div>
+					<div id="boot-notice" role="alert"></div>
+					<!-- Vermilion seal stamp. -->
+					<svg id="boot-seal" viewBox="0 0 44 44" aria-hidden="true">
+						<rect x="2" y="2" width="40" height="40" rx="3" fill="#d9442b" transform="rotate(-4 22 22)"/>
+						<text x="22" y="30" text-anchor="middle" font-size="22" font-family="'Kaiti SC','STKaiti','KaiTi',serif" font-weight="700" fill="#130807" transform="rotate(-4 22 22)">幕</text>
+					</svg>
+				</div>
+			</div>
+		</div>
+
+		<script>
+// Runs before the engine script downloads so the loader text is correct from the first paint.
+const BOOT_ZH = /^zh\b/i.test(navigator.language || '');
+const BOOT_TEXT = BOOT_ZH ? {
+	loading: '加载中…',
+	starting: '启动中…',
+	error: '加载失败',
+	retry: '请刷新页面重试。',
+} : {
+	loading: 'Loading…',
+	starting: 'Starting…',
+	error: 'Failed to load',
+	retry: 'Please reload the page to try again.',
+};
+document.documentElement.lang = BOOT_ZH ? 'zh' : 'en';
+document.getElementById('boot-label').textContent = BOOT_TEXT.loading;
+		</script>
+		<script src="$GODOT_URL"></script>
+		<script>
+const GODOT_CONFIG = $GODOT_CONFIG;
+const GODOT_THREADS_ENABLED = $GODOT_THREADS_ENABLED;
+const engine = new Engine(GODOT_CONFIG);
+
+(function () {
+	const MB = 1024 * 1024;
+	const statusOverlay = document.getElementById('status');
+	const bar = document.getElementById('boot-bar');
+	const fill = document.getElementById('boot-fill');
+	const label = document.getElementById('boot-label');
+	const pct = document.getElementById('boot-pct');
+	const mb = document.getElementById('boot-mb');
+	const notice = document.getElementById('boot-notice');
+
+	let initializing = true;
+
+	function hideStatus() {
+		if (!initializing) {
+			return;
+		}
+		initializing = false;
+		statusOverlay.classList.add('done');
+		setTimeout(() => statusOverlay.remove(), 350);
+	}
+
+	function setProgress(current, total) {
+		if (!initializing) {
+			return;
+		}
+		if (current > 0 && total > 0) {
+			const ratio = Math.min(current / total, 1);
+			bar.classList.remove('indeterminate');
+			fill.style.height = `${(ratio * 100).toFixed(1)}%`;
+			pct.textContent = `${Math.floor(ratio * 100)}%`;
+			mb.textContent = `${(current / MB).toFixed(1)} / ${(total / MB).toFixed(1)} MB`;
+			label.textContent = ratio >= 1 ? BOOT_TEXT.starting : BOOT_TEXT.loading;
+		} else {
+			// Size unknown (no Content-Length, e.g. compressed transfer): drip and show bytes only.
+			bar.classList.add('indeterminate');
+			pct.textContent = '';
+			mb.textContent = current > 0 ? `${(current / MB).toFixed(1)} MB` : '';
+		}
+	}
+
+	function displayFailureNotice(err) {
+		console.error(err);
+		let message = 'An unknown error occurred.';
+		if (err instanceof Error) {
+			message = err.message;
+		} else if (typeof err === 'string') {
+			message = err;
+		}
+		notice.textContent = '';
+		const head = document.createElement('b');
+		head.textContent = BOOT_TEXT.error;
+		notice.appendChild(head);
+		notice.appendChild(document.createTextNode(`\n${message}\n\n${BOOT_TEXT.retry}`));
+		bar.classList.remove('indeterminate');
+		statusOverlay.classList.add('error');
+		initializing = false;
+	}
+
+	const missing = Engine.getMissingFeatures({
+		threads: GODOT_THREADS_ENABLED,
+	});
+
+	if (missing.length !== 0) {
+		if (GODOT_CONFIG['serviceWorker'] && GODOT_CONFIG['ensureCrossOriginIsolationHeaders'] && 'serviceWorker' in navigator) {
+			let serviceWorkerRegistrationPromise;
+			try {
+				serviceWorkerRegistrationPromise = navigator.serviceWorker.getRegistration();
+			} catch (err) {
+				serviceWorkerRegistrationPromise = Promise.reject(new Error('Service worker registration failed.'));
+			}
+			// There's a chance that installing the service worker would fix the issue
+			Promise.race([
+				serviceWorkerRegistrationPromise.then((registration) => {
+					if (registration != null) {
+						return Promise.reject(new Error('Service worker already exists.'));
+					}
+					return registration;
+				}).then(() => engine.installServiceWorker()),
+				// For some reason, `getRegistration()` can stall
+				new Promise((resolve) => {
+					setTimeout(() => resolve(), 2000);
+				}),
+			]).then(() => {
+				// Reload if there was no error.
+				window.location.reload();
+			}).catch((err) => {
+				console.error('Error while registering service worker:', err);
+			});
+		} else {
+			// Display the message as usual
+			const missingMsg = 'The following features required to run this game in the browser are missing:\n';
+			displayFailureNotice(missingMsg + missing.join('\n'));
+		}
+	} else {
+		setProgress(0, 0);
+		engine.startGame({
+			'onProgress': setProgress,
+		}).then(hideStatus, displayFailureNotice);
+	}
+}());
+		</script>
+	</body>
+</html>
