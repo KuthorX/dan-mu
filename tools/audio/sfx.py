@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
-"""Builds DanMu's sound effects into audio/sfx/*.wav (44.1 kHz 16-bit; mono effects,
-stereo jingles) by layering preset hits from the SFX sheet with numpy synthesis.
+"""Builds DanMu's sound effects into audio/sfx/ (44.1 kHz; mono effects, stereo jingles;
+Ogg Vorbis for cues over 0.5 s, 16-bit WAV for the short ones) by layering preset hits from the SFX sheet with numpy synthesis.
 
 Palette: paper and wood for frequent events (brush flicks, wood blocks, Plucked String
 "koto" plucks, Ceramic ticks), bronze and taiko for big ones (Wudang Mountain bell,
@@ -31,6 +31,8 @@ TARGET_LUFS = -16.0
 CEILING_DBTP = -1.0
 MEASURE_MIN = 0.4  # pyloudnorm needs one 400 ms block; shorter effects are zero-padded to it
 OUT = ROOT / "audio" / "sfx"
+OGG_MIN_SECONDS = 0.5  # shorter cues stay WAV (Vorbis headers would outweigh Godot's QOA import)
+OGG_LEVEL = 0.6  # libsndfile Vorbis compression level (0 = best, 1 = smallest)
 rng = np.random.default_rng(7)
 
 
@@ -284,6 +286,21 @@ def write_wav16(samples: np.ndarray, target: pathlib.Path) -> None:
     soundfile.write(target, pcm, RATE, subtype="PCM_16")
 
 
+def write_sfx(samples: np.ndarray, name: str) -> pathlib.Path:
+    """Long cues as .ogg, short ones as .wav; removes the other variant if present."""
+    ogg = len(samples) / RATE > OGG_MIN_SECONDS
+    target, stale = OUT / f"{name}.ogg", OUT / f"{name}.wav"
+    if not ogg:
+        target, stale = stale, target
+    stale.unlink(missing_ok=True)
+    if ogg:
+        pcm = np.clip(np.round(samples * 32767.0), -32768, 32767) / 32767.0  # same quantisation as WAV
+        soundfile.write(target, pcm, RATE, format="OGG", subtype="VORBIS", compression_level=OGG_LEVEL)
+    else:
+        write_wav16(samples, target)
+    return target
+
+
 def main() -> None:
     OUT.mkdir(parents=True, exist_ok=True)
     sounds = build(Sheet())
@@ -292,7 +309,7 @@ def main() -> None:
         samples = finish(make())
         if name not in JINGLES and samples.ndim != 1:
             raise SystemExit(f"{name}: effects must be mono")
-        write_wav16(samples, OUT / f"{name}.wav")
+        write_sfx(samples, name)
         report[name] = {"seconds": round(len(samples) / RATE, 3), "lufs": round(loudness(samples), 1),
                         "true_peak": round(true_peak_db(samples), 1)}
         print(f"{name:14s} {report[name]}")

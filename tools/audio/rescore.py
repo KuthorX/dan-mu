@@ -8,7 +8,7 @@ Three stages, each a separate command so renders can be serialised with lockf:
     lockf -t 3600 /tmp/audiokit/render.lock arch -arm64 $PY /tmp/audiokit/render.py .cache/rescore/<cue>_stems.json
     $PY tools/audio/rescore.py mix            # level each stem by role -> <cue>_mix.json
     lockf ... render.py .cache/rescore/<cue>_mix.json
-    $PY tools/audio/rescore.py finish         # seamless loop wav -> audio/music/<cue>.mp3
+    $PY tools/audio/rescore.py finish         # seamless loop wav -> audio/music/<cue>.ogg
 
 Mixing without listening: every stem is rendered at unity gain, measured (LUFS), and given
 the gain that puts it at a fixed level for its role (lead loudest, pads and doubles under).
@@ -33,7 +33,8 @@ WORK = ROOT / "tools" / "audio" / ".cache" / "rescore"
 OUT = ROOT / "audio" / "music"
 RATE = 44100
 TARGET_LUFS = -18.0
-MP3_KBPS = 160
+# libsndfile Vorbis compression level (0 = best, 1 = smallest); 0.7 is about 110 kbps stereo.
+OGG_LEVEL = 0.7
 TAIL = 6.0
 
 LEAD, DOUBLE, ARP, COMP, PAD, BASS, TAIKO, EXTRA, BELL, DRUMS = 0, 1, 2, 3, 4, 5, 6, 7, 8, 9
@@ -221,8 +222,11 @@ def finish() -> None:
     plan = json.loads((WORK / "plan.json").read_text())
     for name in plan:
         source = WORK / f"{name}.wav"
-        target = OUT / f"{name}.mp3"
-        subprocess.run(["lame", "--quiet", "--cbr", "-b", str(MP3_KBPS), "-q", "2", str(source), str(target)], check=True)
+        target = OUT / f"{name}.ogg"
+        data, rate = soundfile.read(source, always_2d=True)
+        soundfile.write(target, data, rate, format="OGG", subtype="VORBIS", compression_level=OGG_LEVEL)
+        if soundfile.info(target).frames != len(data):  # Vorbis keeps the exact loop length
+            raise SystemExit(f"{name}: ogg length differs from the loop")
         print(f"{name}: -> {target.relative_to(ROOT)}")
 
 

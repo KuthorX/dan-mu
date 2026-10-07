@@ -5,7 +5,7 @@ The game looks like a hanging scroll painted at night: ink-wash sky, rice-paper 
 
 Touhou convention is kept: stages are fast and melodic, bosses are faster and denser, and the title and results cues are slow.
 
-## Music (audio/music/*.mp3, 44.1 kHz stereo, 160 kbps CBR, seamless loops)
+## Music (audio/music/*.ogg, 44.1 kHz stereo Ogg Vorbis, about 110 kbps, sample-exact seamless loops)
 | Cue | Used for | Key / mode | Tempo | Length | Lead / texture | What it should feel like |
 | --- | --- | --- | --- | --- | --- | --- |
 | `title` 掛軸夜想 Nocturne of the Hanging Scroll | title menu | D in-scale (D Eb G A Bb) | 76 BPM | 63.2 s (20 bars) | Serum 2 Pan Flute (xiao) melody, Vital Plucked String 8th-note arpeggios, Serum 2 Bamboo Forest pad, MS Basic fretless bass, MS Basic taiko every two bars, a Wudang Mountain temple bell every four bars | Unrolling a scroll at night: quiet and spacious, with a b2 (Eb) colour. No drum kit. |
@@ -32,7 +32,7 @@ Measured (decoded MP3, ffmpeg ebur128; seam = sample jump across the loop point 
 | boss_final | 64.00 s | -18.4 | -7.4 dBTP | 0.0043 / 0.066 |
 | results | 63.16 s | -18.4 | -5.1 dBTP | 0.0065 / 0.100 |
 
-## Sound effects (audio/sfx/*.wav, 44.1 kHz 16-bit, mono effects and stereo jingles, imported as QOA)
+## Sound effects (audio/sfx/, 44.1 kHz, mono effects and stereo jingles; cues over 0.5 s are Ogg Vorbis, shorter ones 16-bit WAV imported as QOA)
 Every effect layers at least two sources: preset hits cut from one "SFX sheet" render (`tools/audio/sfx_sheet.py`: Vital Ceramic and Plucked String, Serum 2 Harp Wire, Wudang Mountain and Pan Flute, Vital Strings Section, MS Basic taiko and wood blocks) plus numpy synthesis (brush noise, paper bursts, the death glide). Effects are normalised to -16 LUFS (shorter ones measured over a 400 ms window), never above -1 dBTP; very short or quiet ones stop at the peak ceiling. Relative loudness is set per event in `scripts/audio_manager.gd`, re-levelled so the in-game balance matches the previous mix.
 
 | Event | File | Sound | In-game level / rate limit |
@@ -63,7 +63,7 @@ Every effect layers at least two sources: preset hits cut from one "SFX sheet" r
 - No sample packs or downloaded audio are used, and no effect is a bare preset hit.
 
 ## Regenerating
-Needs the audiokit renderer in `/tmp/audiokit` (arm64 venv, Vital and Serum 2 installed), `lame` and `ffmpeg`. Renders never play audio and never open windows; `lockf` serialises them.
+Needs the audiokit renderer in `/tmp/audiokit` (arm64 venv, Vital and Serum 2 installed; libsndfile writes the Ogg Vorbis files) and `ffmpeg`. Renders never play audio and never open windows; `lockf` serialises them.
 ```
 PY="arch -arm64 /tmp/audiokit/venv/bin/python"
 RENDER="lockf -t 3600 /tmp/audiokit/render.lock $PY /tmp/audiokit/render.py"
@@ -71,9 +71,9 @@ $PY tools/audio/rescore.py prepare                      # MIDI + stem specs (too
 for c in title stage_a stage_b boss boss_final results; do $RENDER tools/audio/.cache/rescore/${c}_stems.json; done
 $PY tools/audio/rescore.py mix                          # role-levelled mix specs
 for c in title stage_a stage_b boss boss_final results; do $RENDER tools/audio/.cache/rescore/${c}_mix.json; done
-$PY tools/audio/rescore.py finish                       # audio/music/*.mp3
+$PY tools/audio/rescore.py finish                       # audio/music/*.ogg
 $PY tools/audio/sfx_sheet.py && $RENDER tools/audio/.cache/sfx_sheet/sheet.json
-$PY tools/audio/sfx.py                                  # audio/sfx/*.wav
+$PY tools/audio/sfx.py                                  # audio/sfx/*.ogg + *.wav
 python3 tools/audio/analyze.py                          # duration, LUFS, true peak, loop seam, spectrograms
 ```
 The music `.import` files set `loop=true`.

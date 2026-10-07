@@ -44,7 +44,7 @@ def main() -> None:
     for folder in ("music", "sfx"):
         print(f"== {folder}")
         for path in sorted((ROOT / "audio" / folder).glob("*")):
-            if path.suffix not in (".mp3", ".wav"):
+            if path.suffix not in (".mp3", ".ogg", ".wav"):
                 continue
             rate, data = decode(path)
             stats = measure(path)

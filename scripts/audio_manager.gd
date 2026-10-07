@@ -5,12 +5,12 @@ extends Node
 ## Effect files are normalised to -16 LUFS, so the per-event levels below set the mix.
 
 const MUSIC := {
-	"title": preload("res://audio/music/title.mp3"),
-	"stage_a": preload("res://audio/music/stage_a.mp3"),
-	"stage_b": preload("res://audio/music/stage_b.mp3"),
-	"boss": preload("res://audio/music/boss.mp3"),
-	"boss_final": preload("res://audio/music/boss_final.mp3"),
-	"results": preload("res://audio/music/results.mp3"),
+	"title": preload("res://audio/music/title.ogg"),
+	"stage_a": preload("res://audio/music/stage_a.ogg"),
+	"stage_b": preload("res://audio/music/stage_b.ogg"),
+	"boss": preload("res://audio/music/boss.ogg"),
+	"boss_final": preload("res://audio/music/boss_final.ogg"),
+	"results": preload("res://audio/music/results.ogg"),
 }
 const SFX := {
 	"shot": preload("res://audio/sfx/shot.wav"),
@@ -23,18 +23,18 @@ const SFX := {
 	"enemy_down": preload("res://audio/sfx/enemy_down.wav"),
 	"pickup": preload("res://audio/sfx/pickup.wav"),
 	"pickup_power": preload("res://audio/sfx/pickup_power.wav"),
-	"extend": preload("res://audio/sfx/extend.wav"),
+	"extend": preload("res://audio/sfx/extend.ogg"),
 	"ui_move": preload("res://audio/sfx/ui_move.wav"),
 	"confirm": preload("res://audio/sfx/confirm.wav"),
 	"pause": preload("res://audio/sfx/pause.wav"),
 	"cancel": preload("res://audio/sfx/cancel.wav"),
-	"bomb": preload("res://audio/sfx/bomb.wav"),
-	"spell_declare": preload("res://audio/sfx/spell_declare.wav"),
-	"phase_break": preload("res://audio/sfx/phase_break.wav"),
-	"player_hit": preload("res://audio/sfx/player_hit.wav"),
-	"stage_clear": preload("res://audio/sfx/stage_clear.wav"),
-	"game_clear": preload("res://audio/sfx/game_clear.wav"),
-	"game_over": preload("res://audio/sfx/game_over.wav"),
+	"bomb": preload("res://audio/sfx/bomb.ogg"),
+	"spell_declare": preload("res://audio/sfx/spell_declare.ogg"),
+	"phase_break": preload("res://audio/sfx/phase_break.ogg"),
+	"player_hit": preload("res://audio/sfx/player_hit.ogg"),
+	"stage_clear": preload("res://audio/sfx/stage_clear.ogg"),
+	"game_clear": preload("res://audio/sfx/game_clear.ogg"),
+	"game_over": preload("res://audio/sfx/game_over.ogg"),
 }
 ## Stages 1-3 share the shrine-road theme; 4, 5 and endless use the lantern procession.
 const STAGE_CUES := {1: "stage_a", 2: "stage_a", 3: "stage_a", 4: "stage_b", 5: "stage_b"}
