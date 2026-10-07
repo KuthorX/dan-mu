@@ -9,6 +9,7 @@ const I18n = preload("res://scripts/i18n.gd")
 const OfudaPanelScript = preload("res://scripts/ofuda_panel.gd")
 const TitleArtScript = preload("res://scripts/title_art.gd")
 const PortraitViewScript = preload("res://scripts/portrait_view.gd")
+const VolumeRowsScript = preload("res://scripts/volume_rows.gd")
 const SheetTexture = preload("res://art/ui/sheet.png")
 const CardTexture = preload("res://art/ui/card.png")
 const ScrollTexture = preload("res://art/ui/scroll.png")
@@ -69,6 +70,7 @@ var dialogue_container: Control
 var dialogue_name: Label
 var dialogue_text: Label
 var dialogue_hint: Label
+var volume_rows: Control
 var dialogue_index_label: Label
 var dialogue_left_portrait
 var dialogue_right_portrait
@@ -327,6 +329,10 @@ func _build_overlay() -> void:
 	sheet.add_child(overlay_body)
 	overlay_footer = UiTheme.make_wrapped(UiTheme.make_label("", Vector2(34.0, SHEET_RECT.size.y - 64.0), UiTheme.SerifFont, 14, UiTheme.OXBLOOD, inner_w, HORIZONTAL_ALIGNMENT_CENTER), 44.0)
 	sheet.add_child(overlay_footer)
+	volume_rows = VolumeRowsScript.new().setup(inner_w)
+	volume_rows.position = Vector2(34.0, 290.0)
+	volume_rows.visible = false
+	sheet.add_child(volume_rows)
 	reward_container = Control.new()
 	reward_container.position = Vector2((SHEET_RECT.size.x - CARD_SIZE.x * 3.0 - CARD_GAP * 2.0) * 0.5, 230.0)
 	reward_container.size = Vector2(CARD_SIZE.x * 3.0 + CARD_GAP * 2.0, CARD_SIZE.y)
@@ -499,8 +505,26 @@ func hide_title() -> void:
 	title_container.visible = false
 	ofuda.set_menu_mode(false)
 
-func show_pause() -> void:
-	set_overlay(tr("UI_PAUSED"), tr("UI_PAUSED_BODY"), tr("UI_PAUSED_FOOTER"))
+## `sound` holds music, sfx, max, selected and muted (see main.gd `_sound_state`).
+func show_pause(sound: Dictionary) -> void:
+	_show_volume_sheet(tr("UI_PAUSED"), tr("UI_PAUSED_BODY"), tr("UI_PAUSED_FOOTER"), sound)
+
+## The title's sound sheet: the same paper slip as the pause, with only the levels.
+func show_sound_sheet(sound: Dictionary) -> void:
+	_show_volume_sheet(tr("UI_SOUND"), tr("UI_SOUND_BODY"), tr("UI_SOUND_FOOTER"), sound)
+
+func update_volume(sound: Dictionary) -> void:
+	volume_rows.show_levels(int(sound.get("music", 0)), int(sound.get("sfx", 0)), int(sound.get("max", 10)), int(sound.get("selected", 0)), bool(sound.get("muted", false)))
+
+func is_sound_sheet_visible() -> bool:
+	return overlay.visible and volume_rows.visible
+
+func _show_volume_sheet(header: String, body: String, footer: String, sound: Dictionary) -> void:
+	set_overlay(header, body, footer)
+	overlay_body.size.y = 100.0
+	UiTheme.fit_wrapped(overlay_body, 18, 12)
+	volume_rows.visible = true
+	update_volume(sound)
 
 func show_stage_transition(stage_number: int, title: String, subtitle: String) -> void:
 	set_overlay(tr("UI_STAGE_N") % stage_number, "%s\n\n%s" % [title, subtitle], tr("UI_STAGE_TRANSITION_FOOTER"))
@@ -519,6 +543,7 @@ func show_result(victory: bool, score: int, best_score: int) -> void:
 
 func _reset_overlay_layout() -> void:
 	reward_container.visible = false
+	volume_rows.visible = false
 	reward_anim_timer = 0.0
 	reward_anim_duration = 0.0
 	overlay_body.position = Vector2(34.0, 180.0)

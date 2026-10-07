@@ -25,7 +25,9 @@
 - `Z / Space`：射击 / 确认
 - `Shift`：低速移动（Focus）
 - `X`：Bomb
-- `Esc / P`：暂停
+- `Esc / P`：暂停（暂停时 `W/S` 选择音乐/音效，`A/D` 调节音量）
+- `V`：标题界面打开音量设置
+- `M`：随时全部静音 / 恢复（音量与静音保存在 `user://settings.cfg`）
 
 ## 运行方式
 
@@ -47,6 +49,9 @@
 - `scripts/background.gd`：双主题程序化背景
 - `scripts/effect.gd`：爆炸、冲击波、火花特效
 - `scripts/audio_manager.gd`：BGM 与音效调度（资源在 `audio/`，生成脚本在 `tools/audio/`）
+- `scripts/audio_settings.gd`：音乐 / 音效音量与静音（总线见 `default_bus_layout.tres`）
+- `scripts/volume_rows.gd`：暂停 / 音量纸笺上的音量刻度
+- `tests/audio_settings_test.gd`：音量设置的无头测试（`godot --headless --audio-driver Dummy -s res://tests/audio_settings_test.gd`）
 - `scripts/pickup.gd`：点数/火力道具
 - `scripts/i18n.gd`：语言选择、切换与保存
 - `i18n/translations.csv`：中英文翻译表

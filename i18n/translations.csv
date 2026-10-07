@@ -18,6 +18,8 @@ Z|出阵 · 射击
 Shift|低速
 X|灵击
 Esc|暂停
+V|音量
+M|静音
 L|English","W / S|Difficulty
 A / D|Ship
 Shift|Mode
@@ -26,6 +28,8 @@ Arrows|Move
 Shift|Focus
 X|Bomb
 Esc|Pause
+V|Sound
+M|Mute
 L|中文"
 UI_DIALOGUE_NEXT,Z / Space 继续,Z / Space  Next
 UI_BOSS,首领,Boss
@@ -34,7 +38,7 @@ UI_PAUSED,暂停中,Paused
 UI_PAUSED_BODY,"战斗已暂停。
 先观察弹幕节奏，再回到战场吧。","The battle is paused.
 Study the rhythm of the barrage, then dive back in."
-UI_PAUSED_FOOTER,Esc / Z 继续  -  X 返回标题,Esc / Z Resume  -  X Back to Title
+UI_PAUSED_FOOTER,W / S · A / D 音量  -  Esc / Z 继续  -  X 返回标题,W / S · A / D Volume  -  Esc / Z Resume  -  X Title
 UI_STAGE_N,第 %d 关,Stage %d
 UI_STAGE_TRANSITION_FOOTER,短暂整备后将自动进入下一关。,The next stage begins automatically after a short break.
 UI_GAME_OVER,游戏结束,Game Over
@@ -282,3 +286,13 @@ PHASE_MOON_PETAL_CAGE,月符「月瓣牢笼」,Spell · Moon Petal Cage
 PHASE_PRISM_CASCADE,光符「棱光瀑落」,Spell · Prism Cascade
 PHASE_FALLING_STAR_BORDER,终符「坠星结界」,Last Spell · Falling Star Border
 PHASE_COLLAPSE_FURNACE,终符「边界坍缩熔炉」,Last Spell · Boundary Collapse Furnace
+UI_SOUND,音量,Sound
+UI_SOUND_BODY,调整音乐与音效的音量。,Set the music and sound effect levels.
+UI_SOUND_FOOTER,W / S 选择  -  A / D 调节  -  V / Esc 返回,W / S Select  -  A / D Adjust  -  V / Esc Back
+UI_SOUND_MUSIC,音乐,Music
+UI_SOUND_SFX,音效,Sound FX
+UI_SOUND_OFF,关,Off
+UI_SOUND_MUTE_HINT,按 M 随时全部静音,Press M at any time to mute everything
+UI_SOUND_MUTED,已静音  -  按 M 恢复,Muted  -  press M to unmute
+BANNER_MUTED,已静音,Sound Muted
+BANNER_UNMUTED,声音已恢复,Sound On

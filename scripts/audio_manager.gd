@@ -40,6 +40,10 @@ const STAGE_CUES := {1: "stage_a", 2: "stage_a", 3: "stage_a", 4: "stage_b", 5: 
 const BGM_VOLUME_DB := -2.0
 const JINGLE_VOLUME_DB := -4.0
 const SFX_VOICES := 10
+## Bus names from res://default_bus_layout.tres; volumes are set by scripts/audio_settings.gd.
+## Jingles (stage clear, game over) stand in for the music, so they share its bus.
+const MUSIC_BUS := &"Music"
+const SFX_BUS := &"SFX"
 
 var bgm_player: AudioStreamPlayer
 var jingle_player: AudioStreamPlayer
@@ -165,12 +169,15 @@ func play_game_clear() -> void:
 func _build_players() -> void:
 	bgm_player = AudioStreamPlayer.new()
 	bgm_player.volume_db = BGM_VOLUME_DB
+	bgm_player.bus = MUSIC_BUS
 	add_child(bgm_player)
 	jingle_player = AudioStreamPlayer.new()
 	jingle_player.volume_db = JINGLE_VOLUME_DB
+	jingle_player.bus = MUSIC_BUS
 	add_child(jingle_player)
 	for _index in range(SFX_VOICES):
 		var player := AudioStreamPlayer.new()
+		player.bus = SFX_BUS
 		add_child(player)
 		sfx_players.append(player)
 

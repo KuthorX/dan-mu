@@ -11,6 +11,7 @@ const StageDirectorScript = preload("res://scripts/stage_director.gd")
 const EffectScript = preload("res://scripts/effect.gd")
 const AudioManagerScript = preload("res://scripts/audio_manager.gd")
 const I18n = preload("res://scripts/i18n.gd")
+const AudioSettings = preload("res://scripts/audio_settings.gd")
 const DebugHooksScript = preload("res://scripts/debug_hooks.gd")
 const ScreenFrameScript = preload("res://scripts/screen_frame.gd")
 
@@ -110,6 +111,9 @@ var reward_intro_timer := 0.0
 var reward_input_armed := true
 var endless_unlocked := true
 var menu_mode_index := 0
+## Sound sheet: which line (0 music, 1 SFX) W/S has selected, and whether the title's sheet is up.
+var sound_row := 0
+var sound_sheet_open := false
 var endless_mode_active := false
 var endless_wave := 0
 var endless_score_multiplier := 1.0
@@ -150,6 +154,7 @@ var pickups: Array = []
 func _ready() -> void:
 	randomize()
 	I18n.apply_saved_or_default()
+	AudioSettings.load_and_apply()
 	_apply_window_title()
 	if DisplayServer.get_name() != "headless" and not OS.has_feature("web"):
 		get_window().size = WINDOW_SIZE
@@ -217,6 +222,8 @@ func _quit_cleanly() -> void:
 		audio.shutdown()
 	for _frame in range(3):
 		await get_tree().process_frame
+	# headless frames can outrun the audio thread, so also give it real time
+	await get_tree().create_timer(0.1, true, false, true).timeout
 	get_tree().quit()
 
 func _physics_process(delta: float) -> void:
@@ -247,7 +254,22 @@ func _unhandled_input(event: InputEvent) -> void:
 	if _handle_cheat_input(event):
 		get_viewport().set_input_as_handled()
 		return
+	if event.is_action_pressed(&"mute"):
+		_toggle_mute()
+		get_viewport().set_input_as_handled()
+		return
+	if state == GameState.MENU and sound_sheet_open:
+		_handle_sound_sheet_input(event)
+		get_viewport().set_input_as_handled()
+		return
+	if state == GameState.PAUSED and _handle_volume_keys(event):
+		get_viewport().set_input_as_handled()
+		return
 	if state == GameState.MENU:
+		if event.is_action_pressed(&"sound_menu"):
+			_open_sound_sheet()
+			get_viewport().set_input_as_handled()
+			return
 		if event.is_action_pressed(&"toggle_language"):
 			_toggle_language()
 			get_viewport().set_input_as_handled()
@@ -326,6 +348,52 @@ func _unhandled_input(event: InputEvent) -> void:
 			_return_to_title()
 			get_viewport().set_input_as_handled()
 
+func _sound_state() -> Dictionary:
+	return {
+		"music": AudioSettings.music_level,
+		"sfx": AudioSettings.sfx_level,
+		"max": AudioSettings.MAX_LEVEL,
+		"selected": sound_row,
+		"muted": AudioSettings.muted,
+	}
+
+func _open_sound_sheet() -> void:
+	sound_sheet_open = true
+	sound_row = 0
+	hud.show_sound_sheet(_sound_state())
+	audio.play_confirm()
+
+func _close_sound_sheet() -> void:
+	sound_sheet_open = false
+	hud.hide_overlay()
+	audio.play_cancel()
+
+func _handle_sound_sheet_input(event: InputEvent) -> void:
+	for action in [&"sound_menu", &"pause", &"shoot", &"ui_accept", &"bomb"]:
+		if event.is_action_pressed(action):
+			_close_sound_sheet()
+			return
+	_handle_volume_keys(event)
+
+## W/S picks music or SFX, A/D steps its level; shared by the pause and title sheets.
+func _handle_volume_keys(event: InputEvent) -> bool:
+	if event.is_action_pressed(&"move_up") or event.is_action_pressed(&"move_down"):
+		sound_row = 1 - sound_row
+	elif event.is_action_pressed(&"move_left") or event.is_action_pressed(&"move_right"):
+		var bus: StringName = AudioSettings.BUS_MUSIC if sound_row == 0 else AudioSettings.BUS_SFX
+		AudioSettings.step(bus, -1 if event.is_action_pressed(&"move_left") else 1)
+	else:
+		return false
+	hud.update_volume(_sound_state())
+	audio.play_ui_move()
+	return true
+
+func _toggle_mute() -> void:
+	AudioSettings.toggle_mute()
+	show_banner(tr("BANNER_MUTED") if AudioSettings.muted else tr("BANNER_UNMUTED"))
+	if hud.is_sound_sheet_visible():
+		hud.update_volume(_sound_state())
+
 func _handle_cheat_input(event: InputEvent) -> bool:
 	if not (event is InputEventKey):
 		return false
@@ -359,6 +427,8 @@ func ensure_input_map() -> void:
 	_bind_action(&"bomb", [KEY_X])
 	_bind_action(&"pause", [KEY_ESCAPE])
 	_bind_action(&"toggle_language", [KEY_L])
+	_bind_action(&"sound_menu", [KEY_V])
+	_bind_action(&"mute", [KEY_M])
 	_bind_action(&"ui_accept", [KEY_ENTER, KEY_KP_ENTER])
 
 func _bind_action(action: StringName, keys: Array) -> void:
@@ -517,6 +587,7 @@ func _sort_endless_records(a: Dictionary, b: Dictionary) -> bool:
 	return a_wave > b_wave
 
 func _return_to_title() -> void:
+	sound_sheet_open = false
 	_clear_combat_layers(false)
 	stage_director = null
 	endless_mode_active = false
@@ -554,7 +625,8 @@ func pause_game() -> void:
 	if state != GameState.PLAYING:
 		return
 	state = GameState.PAUSED
-	hud.show_pause()
+	sound_row = 0
+	hud.show_pause(_sound_state())
 	hud.flash(Color(0.62, 0.82, 1.0), 0.18, 0.18)
 	audio.play_pause()
 	_update_hud()
@@ -836,7 +908,7 @@ func _menu_mode_description() -> String:
 	return tr("MODE_STORY_DESC")
 
 func _toggle_language() -> void:
-	if state != GameState.MENU:
+	if state != GameState.MENU or sound_sheet_open:
 		return
 	I18n.toggle_locale()
 	_apply_window_title()
